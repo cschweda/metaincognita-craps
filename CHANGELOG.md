@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 ## [0.3.0] - 2026-04-04
 
+### Advisor "Do This" Actions
+- **Clickable advisor recommendations**: The "DO THIS →" boxes in the advisor panel are now buttons when an actionable bet is available. Click to instantly place the recommended bet.
+- **Odds bets auto-max**: Clicking "DO THIS" for Pass Odds or Don't Pass Odds automatically places the maximum allowed odds bet.
+- **Regular bets use selected chip**: All other advisor bets place at the currently selected chip denomination.
+- **Study mode blocks actions**: Advisor buttons are disabled during study mode.
+
 ### Game Engine Fixes (Critical + High)
 - **Come Odds orphan fix**: OFF Come/Pass Odds are now returned to the player when their parent bet is resolved while odds are not working (e.g., come-out 7 with established Come bet)
 - **Seven-out sweep**: OFF Place/Buy/Hardways are swept as losses on seven-out. OFF odds are returned to player.

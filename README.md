@@ -11,7 +11,7 @@ Play at your own pace, or flip on auto-roll and rapid mode to grind through thou
 ## Features
 
 - **Full visual craps table** — interactive SVG layout with every betting zone, animated dice, chip stacks, and an ON/OFF puck that moves with the point
-- **Real-time advisor** — a teaching coach that tells you exactly what to bet, where to click, and why, with every option ranked from best (0% edge) to worst (16.67% edge) in plain English
+- **Real-time advisor with one-click actions** — a teaching coach that tells you exactly what to bet, where to click, and why, with every option ranked from best (0% edge) to worst (16.67% edge) in plain English. Click any "DO THIS" recommendation to instantly place that bet.
 - **44 bet types** — every standard casino craps wager: Pass, Don't Pass, Come, Odds, Place, Buy, Lay, Field, Hardways, Props, Horn, C&E, Big 6/8, and Hop bets
 - **Rapid play + auto-roll** — skip animations and auto-roll on a timer to simulate hundreds of rolls per minute and watch the statistics converge
 - **Same Bet button** — one click re-places your previous bet configuration for steady grinding

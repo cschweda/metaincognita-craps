@@ -1,8 +1,13 @@
 <script setup lang="ts">
+import type { BetType } from '~/utils/betTypes'
 import { formatCents, formatPercent } from '~/utils/format'
 
 const store = useCrapsStore()
 const { getRecommendations, getSessionInsights } = useAdvisor()
+
+const emit = defineEmits<{
+  'advisor-bet': [betType: BetType]
+}>()
 
 const recommendations = computed(() => getRecommendations())
 const insights = computed(() => getSessionInsights())
@@ -147,9 +152,16 @@ function betTypeLabel(type: string): string {
             </p>
           </div>
 
-          <!-- WHERE to click (highlighted action box) -->
+          <!-- WHERE to click (highlighted action box — clickable when a bet can be placed) -->
+          <button
+            v-if="rec.where && rec.betType"
+            class="mt-2 w-full text-left px-2.5 py-1.5 rounded border text-xs leading-snug transition-all cursor-pointer bg-emerald-900/40 border-emerald-500/30 text-emerald-300 hover:bg-emerald-800/60 hover:border-emerald-400/50 active:scale-[0.98]"
+            @click="emit('advisor-bet', rec.betType!)"
+          >
+            <span class="font-bold">DO THIS →</span> {{ rec.where }}
+          </button>
           <div
-            v-if="rec.where"
+            v-else-if="rec.where"
             class="mt-2 px-2.5 py-1.5 rounded bg-emerald-900/40 border border-emerald-500/30 text-emerald-300 text-xs leading-snug"
           >
             <span class="font-bold">DO THIS →</span> {{ rec.where }}

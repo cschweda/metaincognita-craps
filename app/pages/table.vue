@@ -229,6 +229,27 @@ function confirmNewGame() { store.clearSession(); router.push('/') }
 // ── Sidebar ──
 const showSidebar = ref(true)
 const hero = computed(() => store.hero)
+
+// ── Advisor "DO THIS" handler ──
+function handleAdvisorBet(betType: BetType) {
+  if (studyMode.value) return
+
+  // For odds bets, place max odds
+  if (betType === 'passOdds' || betType === 'dontPassOdds') {
+    const lineType = betType === 'passOdds' ? 'pass' : 'dontPass'
+    const lineBet = store.activeBets.find(
+      b => b.owner === 'hero' && b.type === lineType && b.status !== 'resolved'
+    )
+    if (!lineBet || !store.point) return
+    const multiples = crapsConfig.oddsMultiples[store.tableRules.oddsMultiple]
+    const maxMultiple = multiples?.[store.point] ?? 1
+    placeBet(betType, lineBet.amount * maxMultiple, 'hero')
+    return
+  }
+
+  // For all other bets, place at the currently selected chip value
+  placeBet(betType, store.selectedChipValue, 'hero')
+}
 </script>
 
 <template>
@@ -402,7 +423,7 @@ const hero = computed(() => store.hero)
         class="w-80 border-l border-neutral-800 shrink-0 transition-all duration-200 overflow-y-auto overflow-x-hidden"
         :class="showSidebar ? 'max-w-80' : 'max-w-0 border-l-0'"
       >
-        <StatsAdvisorPanel />
+        <StatsAdvisorPanel @advisor-bet="handleAdvisorBet" />
       </aside>
     </div>
 
