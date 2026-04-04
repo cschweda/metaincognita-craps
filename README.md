@@ -1,16 +1,21 @@
 # Craps Simulator
 
-A browser-based casino craps training tool built with Nuxt 4 and Nuxt UI. Learn which bets are mathematically sound, which are sucker bets, and why — by watching the math play out in real time across hundreds of rolls.
+A visual, interactive casino craps simulator that plays like a real table — not a spreadsheet. Place chips on an emerald felt layout, watch the dice tumble, and learn why the Pass Line is your best friend and Any 7 is a trap. A built-in advisor coaches you through every roll, explains the math in plain English, and ranks every bet on the board from best to worst so you never have to guess.
+
+Play at your own pace, or flip on auto-roll and rapid mode to grind through thousands of rolls and watch the house edge converge in real time. No money, no pressure, no judgment — just you, the dice, and the math.
 
 ## Features
 
-- **Interactive SVG craps table** with all standard betting zones
-- **Complete bet catalog** — 44 named bet types covering every standard casino craps wager
-- **Mathematically verified engine** — integer-cent arithmetic, chi-squared validated dice, house edge convergence tests
-- **8 bot co-bettors** with real betting strategies (Pass + Max Odds, Martingale, Iron Cross, Three-Point Molly, and more)
-- **Real-time teaching advisor** — context-aware recommendations ranked by house edge with beginner-friendly explanations
-- **Configurable table rules** — odds multiples (1x to 100x), field payouts, vig timing, payout rounding
-- **Casino-dark aesthetic** — emerald felt, walnut rail, animated dice, stacked chips
+- **Full visual craps table** — interactive SVG layout with every betting zone, animated dice, chip stacks, and an ON/OFF puck that moves with the point
+- **Real-time advisor** — a teaching coach that tells you exactly what to bet, where to click, and why, with every option ranked from best (0% edge) to worst (16.67% edge) in plain English
+- **44 bet types** — every standard casino craps wager: Pass, Don't Pass, Come, Odds, Place, Buy, Lay, Field, Hardways, Props, Horn, C&E, Big 6/8, and Hop bets
+- **Rapid play + auto-roll** — skip animations and auto-roll on a timer to simulate hundreds of rolls per minute and watch the statistics converge
+- **Same Bet button** — one click re-places your previous bet configuration for steady grinding
+- **8 bot co-bettors** — watch Conservative Carl, Martingale Mike, Iron Cross Irene, and five other named strategies play alongside you with their own bankrolls
+- **Session stats** — roll distribution charts, per-bet-type win/loss tracking, P&L over time, point conversion rates, and gambler's fallacy warnings
+- **Configurable everything** — 5 stake levels ($5–$500 tables), odds multiples (1x to 100x), field payouts, vig timing, payout rounding
+- **Mathematically verified** — integer-cent arithmetic prevents rounding errors, chi-squared validated dice, house edge convergence tests for every bet type
+- **Casino atmosphere** — dark emerald felt, gold accents, stickman calls ("Seven out! Line away!"), and floating payout animations
 
 ## Rules Reference
 
