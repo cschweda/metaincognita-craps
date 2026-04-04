@@ -332,8 +332,8 @@ const hero = computed(() => store.hero)
         </div>
 
         <!-- Craps table + payout floaters -->
-        <div class="flex-1 flex items-center justify-center px-2 py-1 overflow-hidden relative min-h-0">
-          <div class="w-full max-w-[1100px] relative">
+        <div class="table-area flex-1 flex items-center justify-center px-2 relative min-h-0">
+          <div class="table-wrapper relative">
             <TableCrapsTable
               :active-bets="store.activeBets"
               :disabled-zones="takeDownMode ? [] : disabledZones"
@@ -435,10 +435,22 @@ const hero = computed(() => store.hero)
   animation: float-up 1.5s ease-out forwards;
 }
 
-/* Constrain the SVG table to available height without shrinking width */
-.table-page :deep(.craps-table) {
+/* Table area: the SVG must fit entirely within this box (no clipping) */
+.table-area {
+  overflow: visible;
+}
+
+.table-wrapper {
+  max-width: 1100px;
   width: 100%;
-  height: auto;
   max-height: 100%;
+  /* Aspect ratio matches the SVG viewBox (1240:640 with padding) */
+  aspect-ratio: 1240 / 640;
+}
+
+.table-page :deep(.craps-table) {
+  display: block;
+  width: 100%;
+  height: 100%;
 }
 </style>
