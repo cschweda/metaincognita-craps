@@ -323,9 +323,9 @@ const hero = computed(() => store.hero)
     </header>
 
     <!-- Main content: table + sidebar -->
-    <div class="flex-1 flex overflow-hidden">
+    <div class="flex-1 flex overflow-hidden min-h-0">
       <!-- Left: table area -->
-      <div class="flex-1 flex flex-col min-w-0">
+      <div class="flex-1 flex flex-col min-w-0 min-h-0">
         <!-- Stickman call -->
         <div class="h-10 flex items-center justify-center shrink-0">
           <TableStickmanCall />
@@ -399,7 +399,7 @@ const hero = computed(() => store.hero)
 
       <!-- Right: stats/advisor sidebar -->
       <aside
-        class="w-80 border-l border-neutral-800 shrink-0 transition-all duration-200 overflow-hidden"
+        class="w-80 border-l border-neutral-800 shrink-0 transition-all duration-200 overflow-y-auto overflow-x-hidden"
         :class="showSidebar ? 'max-w-80' : 'max-w-0 border-l-0'"
       >
         <StatsAdvisorPanel />

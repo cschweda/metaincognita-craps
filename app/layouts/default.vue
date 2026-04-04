@@ -38,7 +38,7 @@ const hasActiveSession = computed(() => store.phase !== 'SETUP')
 </script>
 
 <template>
-  <div class="min-h-screen bg-neutral-950 flex flex-col">
+  <div class="h-screen bg-neutral-950 flex flex-col overflow-hidden">
     <!-- Top status bar -->
     <nav class="h-9 flex items-center justify-between px-3 bg-neutral-900 border-b border-neutral-800 shrink-0 z-50">
       <div class="flex items-center gap-2">
