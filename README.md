@@ -10,11 +10,11 @@ Play at your own pace, or flip on auto-roll and rapid mode to grind through thou
 
 ### Setup
 
-![Setup screen](public/screenshot-setup.png)
+![Setup screen](public/game00.png)
 
 ### Table
 
-![Table screen](public/screenshot-table.png)
+![Table screen](public/game01.png)
 
 ## Features
 
