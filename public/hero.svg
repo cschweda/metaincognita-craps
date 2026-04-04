@@ -1,0 +1,182 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 720" width="1280" height="720">
+  <defs>
+    <!-- Graph paper pattern -->
+    <pattern id="grid-small" width="20" height="20" patternUnits="userSpaceOnUse">
+      <path d="M 20 0 L 0 0 0 20" fill="none" stroke="#1a2a2a" stroke-width="0.5"/>
+    </pattern>
+    <pattern id="grid-large" width="100" height="100" patternUnits="userSpaceOnUse">
+      <rect width="100" height="100" fill="url(#grid-small)"/>
+      <path d="M 100 0 L 0 0 0 100" fill="none" stroke="#1e3333" stroke-width="1"/>
+    </pattern>
+    <!-- Glow filter for title -->
+    <filter id="title-glow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="3" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+    <!-- Subtle shadow for dice -->
+    <filter id="dice-shadow" x="-10%" y="-10%" width="130%" height="130%">
+      <feDropShadow dx="3" dy="4" stdDeviation="5" flood-color="#000" flood-opacity="0.5"/>
+    </filter>
+    <!-- Felt texture gradient -->
+    <radialGradient id="felt-glow" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#0d2818" stop-opacity="0.6"/>
+      <stop offset="100%" stop-color="transparent"/>
+    </radialGradient>
+    <!-- Gold gradient for result bar -->
+    <linearGradient id="gold-grad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#c8962d"/>
+      <stop offset="50%" stop-color="#f0d060"/>
+      <stop offset="100%" stop-color="#c8962d"/>
+    </linearGradient>
+    <!-- Chip gradient red -->
+    <radialGradient id="chip-red" cx="40%" cy="35%">
+      <stop offset="0%" stop-color="#ff4444"/>
+      <stop offset="100%" stop-color="#aa1111"/>
+    </radialGradient>
+    <!-- Chip gradient green -->
+    <radialGradient id="chip-green" cx="40%" cy="35%">
+      <stop offset="0%" stop-color="#44cc66"/>
+      <stop offset="100%" stop-color="#117733"/>
+    </radialGradient>
+    <!-- Chip gradient black -->
+    <radialGradient id="chip-black" cx="40%" cy="35%">
+      <stop offset="0%" stop-color="#555"/>
+      <stop offset="100%" stop-color="#111"/>
+    </radialGradient>
+    <!-- Puck ON gradient -->
+    <radialGradient id="puck-on" cx="45%" cy="40%">
+      <stop offset="0%" stop-color="#ffffff"/>
+      <stop offset="100%" stop-color="#cccccc"/>
+    </radialGradient>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1280" height="720" fill="#0c1117"/>
+  <rect width="1280" height="720" fill="url(#grid-large)" opacity="0.7"/>
+  <ellipse cx="640" cy="380" rx="500" ry="280" fill="url(#felt-glow)"/>
+
+  <!-- Sparkle line chart in background (right side) -->
+  <polyline points="780,320 820,310 860,330 900,290 940,300 980,260 1020,280 1060,250 1100,270 1140,240 1180,260 1220,230"
+    fill="none" stroke="#2d8a5e" stroke-width="1.5" opacity="0.35"/>
+  <polyline points="780,340 820,350 860,335 900,360 940,345 980,370 1020,355 1060,380 1100,365 1140,390 1180,375 1220,395"
+    fill="none" stroke="#8a2d2d" stroke-width="1.5" opacity="0.25"/>
+
+  <!-- Title -->
+  <text x="640" y="130" text-anchor="middle" font-family="'Courier New', Courier, monospace" font-size="72" font-weight="bold" fill="#f0c030" filter="url(#title-glow)" letter-spacing="2">Craps Simulator</text>
+
+  <!-- Subtitle -->
+  <text x="640" y="175" text-anchor="middle" font-family="'Courier New', Courier, monospace" font-size="22" fill="#7a8a9a">Every bet, every roll, every edge — visualized</text>
+
+  <!-- === DICE (center, two dice showing 6 and 5 = 11, yo-eleven) === -->
+  <!-- Die 1: showing 6 -->
+  <g filter="url(#dice-shadow)" transform="translate(420, 220) rotate(-8, 60, 60)">
+    <rect x="0" y="0" width="120" height="120" rx="16" fill="#f8f8f0" stroke="#c8962d" stroke-width="3"/>
+    <!-- Pips: 6 -->
+    <circle cx="30" cy="30" r="10" fill="#1a1a1a"/>
+    <circle cx="30" cy="60" r="10" fill="#1a1a1a"/>
+    <circle cx="30" cy="90" r="10" fill="#1a1a1a"/>
+    <circle cx="90" cy="30" r="10" fill="#1a1a1a"/>
+    <circle cx="90" cy="60" r="10" fill="#1a1a1a"/>
+    <circle cx="90" cy="90" r="10" fill="#1a1a1a"/>
+  </g>
+
+  <!-- Die 2: showing 5 -->
+  <g filter="url(#dice-shadow)" transform="translate(580, 230) rotate(12, 60, 60)">
+    <rect x="0" y="0" width="120" height="120" rx="16" fill="#f8f8f0" stroke="#c8962d" stroke-width="3"/>
+    <!-- Pips: 5 -->
+    <circle cx="30" cy="30" r="10" fill="#cc2222"/>
+    <circle cx="30" cy="90" r="10" fill="#cc2222"/>
+    <circle cx="60" cy="60" r="10" fill="#cc2222"/>
+    <circle cx="90" cy="30" r="10" fill="#cc2222"/>
+    <circle cx="90" cy="90" r="10" fill="#cc2222"/>
+  </g>
+
+  <!-- Puck (ON) -->
+  <g transform="translate(755, 250)">
+    <circle cx="0" cy="0" r="28" fill="url(#puck-on)" stroke="#999" stroke-width="2"/>
+    <text x="0" y="7" text-anchor="middle" font-family="'Arial Black', Arial, sans-serif" font-size="18" font-weight="bold" fill="#111">ON</text>
+  </g>
+
+  <!-- Chip stacks -->
+  <!-- Stack 1 (red chips, left of dice) -->
+  <g transform="translate(340, 310)">
+    <ellipse cx="0" cy="0" rx="22" ry="10" fill="#881111"/>
+    <ellipse cx="0" cy="-6" rx="22" ry="10" fill="#aa1818"/>
+    <ellipse cx="0" cy="-12" rx="22" ry="10" fill="url(#chip-red)"/>
+    <text x="0" y="-8" text-anchor="middle" font-family="Arial, sans-serif" font-size="9" font-weight="bold" fill="#fff">$5</text>
+  </g>
+
+  <!-- Stack 2 (green chips) -->
+  <g transform="translate(340, 265)">
+    <ellipse cx="0" cy="0" rx="22" ry="10" fill="#115522"/>
+    <ellipse cx="0" cy="-6" rx="22" ry="10" fill="#117733"/>
+    <ellipse cx="0" cy="-12" rx="22" ry="10" fill="#118833"/>
+    <ellipse cx="0" cy="-18" rx="22" ry="10" fill="url(#chip-green)"/>
+    <text x="0" y="-14" text-anchor="middle" font-family="Arial, sans-serif" font-size="9" font-weight="bold" fill="#fff">$25</text>
+  </g>
+
+  <!-- Stack 3 (black chips, right side) -->
+  <g transform="translate(815, 320)">
+    <ellipse cx="0" cy="0" rx="22" ry="10" fill="#0a0a0a"/>
+    <ellipse cx="0" cy="-6" rx="22" ry="10" fill="#222"/>
+    <ellipse cx="0" cy="-12" rx="22" ry="10" fill="url(#chip-black)"/>
+    <text x="0" y="-8" text-anchor="middle" font-family="Arial, sans-serif" font-size="9" font-weight="bold" fill="#ddd">$100</text>
+  </g>
+
+  <!-- === RESULT BAR === -->
+  <g transform="translate(640, 430)">
+    <line x1="-280" y1="0" x2="-160" y2="0" stroke="url(#gold-grad)" stroke-width="3"/>
+    <line x1="160" y1="0" x2="280" y2="0" stroke="url(#gold-grad)" stroke-width="3"/>
+    <text x="0" y="8" text-anchor="middle" font-family="'Courier New', Courier, monospace" font-size="30" font-weight="bold" fill="#f0d060" letter-spacing="3">YO-ELEVEN — PAYS 15:1</text>
+  </g>
+
+  <!-- === STICKMAN CALL === -->
+  <text x="640" y="475" text-anchor="middle" font-family="'Courier New', Courier, monospace" font-size="16" fill="#5a7a6a" font-style="italic">"Yo eleven! Winner on the front line!"</text>
+
+  <!-- === ADVISOR PANEL (bottom left) === -->
+  <g transform="translate(100, 500)">
+    <rect x="0" y="0" width="340" height="155" rx="8" fill="#111a22" stroke="#1e3333" stroke-width="1.5"/>
+    <text x="20" y="28" font-family="'Courier New', Courier, monospace" font-size="14" font-weight="bold" fill="#4aaa6a" letter-spacing="2">ADVISOR</text>
+    <line x1="20" y1="38" x2="320" y2="38" stroke="#1e3333" stroke-width="1"/>
+    <text x="20" y="60" font-family="'Courier New', Courier, monospace" font-size="13" fill="#7a8a9a">Best bet:</text>
+    <text x="130" y="60" font-family="'Courier New', Courier, monospace" font-size="13" fill="#4aee8a">Pass Line Odds (0% edge)</text>
+    <text x="20" y="82" font-family="'Courier New', Courier, monospace" font-size="13" fill="#7a8a9a">Avoid:</text>
+    <text x="130" y="82" font-family="'Courier New', Courier, monospace" font-size="13" fill="#ee4a4a">Any 7 (16.67% edge)</text>
+    <text x="20" y="104" font-family="'Courier New', Courier, monospace" font-size="13" fill="#7a8a9a">Your bet:</text>
+    <text x="130" y="104" font-family="'Courier New', Courier, monospace" font-size="13" fill="#f0d060">Pass Line — optimal</text>
+    <text x="20" y="132" font-family="'Courier New', Courier, monospace" font-size="12" fill="#4a6a5a">44 bet types ranked by house edge</text>
+    <text x="20" y="148" font-family="'Courier New', Courier, monospace" font-size="12" fill="#4a6a5a">Math explained in plain English</text>
+  </g>
+
+  <!-- === SESSION STATS (bottom right) === -->
+  <g transform="translate(840, 500)">
+    <rect x="0" y="0" width="340" height="155" rx="8" fill="#111a22" stroke="#1e3333" stroke-width="1.5"/>
+    <text x="20" y="28" font-family="'Courier New', Courier, monospace" font-size="14" font-weight="bold" fill="#4aaa6a" letter-spacing="2">SESSION</text>
+    <line x1="20" y1="38" x2="320" y2="38" stroke="#1e3333" stroke-width="1"/>
+    <text x="20" y="62" font-family="'Courier New', Courier, monospace" font-size="13" fill="#7a8a9a">Rolls:</text>
+    <text x="120" y="62" font-family="'Courier New', Courier, monospace" font-size="13" fill="#4aeeff">247</text>
+    <text x="170" y="62" font-family="'Courier New', Courier, monospace" font-size="13" fill="#7a8a9a">Point:</text>
+    <text x="250" y="62" font-family="'Courier New', Courier, monospace" font-size="13" fill="#f0d060">8</text>
+    <text x="20" y="84" font-family="'Courier New', Courier, monospace" font-size="13" fill="#7a8a9a">Bankroll:</text>
+    <text x="135" y="84" font-family="'Courier New', Courier, monospace" font-size="13" fill="#4aee8a">$1,247.50</text>
+    <text x="20" y="106" font-family="'Courier New', Courier, monospace" font-size="13" fill="#7a8a9a">Win rate:</text>
+    <text x="135" y="106" font-family="'Courier New', Courier, monospace" font-size="13" fill="#4aeeff">49.2%</text>
+    <text x="210" y="106" font-family="'Courier New', Courier, monospace" font-size="13" fill="#7a8a9a">P&amp;L:</text>
+    <text x="260" y="106" font-family="'Courier New', Courier, monospace" font-size="13" fill="#4aee8a">+$247.50</text>
+
+    <!-- Bot comparison -->
+    <text x="20" y="130" font-family="'Courier New', Courier, monospace" font-size="11" font-weight="bold" fill="#5a7a8a" letter-spacing="1">BOT COMPARISON</text>
+    <text x="20" y="148" font-family="'Courier New', Courier, monospace" font-size="12" fill="#7a8a9a">You:</text>
+    <text x="60" y="148" font-family="'Courier New', Courier, monospace" font-size="12" fill="#4aee8a">+24.8%</text>
+    <text x="130" y="148" font-family="'Courier New', Courier, monospace" font-size="12" fill="#7a8a9a">Carl:</text>
+    <text x="180" y="148" font-family="'Courier New', Courier, monospace" font-size="12" fill="#4aeeff">+12.1%</text>
+    <text x="248" y="148" font-family="'Courier New', Courier, monospace" font-size="12" fill="#7a8a9a">Mike:</text>
+    <text x="298" y="148" font-family="'Courier New', Courier, monospace" font-size="12" fill="#ee4a4a">-34.5%</text>
+  </g>
+
+  <!-- Subtle branding bottom -->
+  <text x="640" y="700" text-anchor="middle" font-family="'Courier New', Courier, monospace" font-size="11" fill="#2a3a3a">metaincognita</text>
+</svg>

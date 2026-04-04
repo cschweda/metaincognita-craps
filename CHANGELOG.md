@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.3.0] - 2026-04-04
+
+### Polish & DX
+- **Hero image**: SVG + PNG hero banner for README with dice, chips, advisor panel, session stats, and casino aesthetic
+- **SPA loading screen**: Dark-themed loading template with animated dice and gold progress bar (eliminates white flash on load)
+- **Cache clean script**: `pnpm clean` removes `.nuxt` and `node_modules/.vite` for stale dependency issues
+- **README hero**: Hero image added to top of README
+
 ## [0.2.0] - 2026-04-04
 
 ### Phase 3 — Game Loop & Hero Interaction

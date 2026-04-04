@@ -1,5 +1,7 @@
 # Craps Simulator
 
+![Craps Simulator](public/hero.png)
+
 A visual, interactive casino craps simulator that plays like a real table — not a spreadsheet. Place chips on an emerald felt layout, watch the dice tumble, and learn why the Pass Line is your best friend and Any 7 is a trap. A built-in advisor coaches you through every roll, explains the math in plain English, and ranks every bet on the board from best to worst so you never have to guess.
 
 Play at your own pace, or flip on auto-roll and rapid mode to grind through thousands of rolls and watch the house edge converge in real time. No money, no pressure, no judgment — just you, the dice, and the math.

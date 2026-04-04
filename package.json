@@ -16,7 +16,8 @@
     "test:unit": "vitest --project unit",
     "test:nuxt": "vitest --project nuxt",
     "test:e2e": "playwright test",
-    "test:e2e:ui": "playwright test --ui"
+    "test:e2e:ui": "playwright test --ui",
+    "clean": "rm -rf node_modules/.vite .nuxt"
   },
   "dependencies": {
     "@iconify-json/lucide": "^1.2.100",
