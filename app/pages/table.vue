@@ -332,8 +332,8 @@ const hero = computed(() => store.hero)
         </div>
 
         <!-- Craps table + payout floaters -->
-        <div class="flex-1 flex items-center justify-center px-2 overflow-hidden relative min-h-0 shrink">
-          <div class="max-w-[1100px] h-full relative flex items-center">
+        <div class="flex-1 flex items-center justify-center px-2 overflow-hidden relative min-h-0">
+          <div class="w-full max-w-[1100px] relative">
             <TableCrapsTable
               :active-bets="store.activeBets"
               :disabled-zones="takeDownMode ? [] : disabledZones"
@@ -433,5 +433,12 @@ const hero = computed(() => store.hero)
 }
 .payout-float {
   animation: float-up 1.5s ease-out forwards;
+}
+
+/* Constrain the SVG table to available height without shrinking width */
+.table-page :deep(.craps-table) {
+  width: 100%;
+  height: auto;
+  max-height: 100%;
 }
 </style>
