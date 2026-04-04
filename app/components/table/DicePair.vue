@@ -48,8 +48,8 @@ const pips: Record<number, boolean[]> = {
 </script>
 
 <template>
-  <div class="flex flex-col items-center gap-3">
-    <div class="flex items-center gap-5">
+  <div class="flex flex-col items-center gap-1.5">
+    <div class="flex items-center gap-4">
       <!-- Die 1 -->
       <div
         class="die"
@@ -83,13 +83,13 @@ const pips: Record<number, boolean[]> = {
     <!-- Total badge -->
     <div
       v-if="hasResult && !props.rolling"
-      class="px-4 py-1 rounded-full bg-gradient-to-b from-amber-400 to-amber-600 text-black font-bold text-lg shadow-lg shadow-amber-500/30 min-w-[3rem] text-center"
+      class="px-3 py-0.5 rounded-full bg-gradient-to-b from-amber-400 to-amber-600 text-black font-bold text-sm shadow-lg shadow-amber-500/30 min-w-[2.5rem] text-center"
     >
       {{ total }}
     </div>
     <div
       v-else-if="props.rolling"
-      class="px-4 py-1 rounded-full bg-neutral-700 text-neutral-400 font-bold text-lg min-w-[3rem] text-center animate-pulse"
+      class="px-3 py-0.5 rounded-full bg-neutral-700 text-neutral-400 font-bold text-sm min-w-[2.5rem] text-center animate-pulse"
     >
       ...
     </div>
@@ -98,8 +98,8 @@ const pips: Record<number, boolean[]> = {
 
 <style scoped>
 .die {
-  width: 64px;
-  height: 64px;
+  width: 52px;
+  height: 52px;
   background: linear-gradient(145deg, #ffffff, #e8e8e8);
   border: 2px solid #aaa;
   border-radius: 10px;
@@ -107,7 +107,7 @@ const pips: Record<number, boolean[]> = {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   grid-template-rows: repeat(3, 1fr);
-  padding: 8px;
+  padding: 6px;
   box-sizing: border-box;
 }
 
@@ -118,8 +118,8 @@ const pips: Record<number, boolean[]> = {
 }
 
 .pip {
-  width: 12px;
-  height: 12px;
+  width: 10px;
+  height: 10px;
   border-radius: 50%;
   background: radial-gradient(circle at 35% 35%, #ef4444, #991b1b);
   box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.2), 0 1px 2px rgba(0, 0, 0, 0.3);

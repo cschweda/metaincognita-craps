@@ -332,8 +332,8 @@ const hero = computed(() => store.hero)
         </div>
 
         <!-- Craps table + payout floaters -->
-        <div class="flex-1 flex items-center justify-center px-2 overflow-hidden relative min-h-0">
-          <div class="w-full max-w-[1100px] max-h-full relative">
+        <div class="flex-1 flex items-center justify-center px-2 overflow-hidden relative min-h-0 shrink">
+          <div class="max-w-[1100px] h-full relative flex items-center">
             <TableCrapsTable
               :active-bets="store.activeBets"
               :disabled-zones="takeDownMode ? [] : disabledZones"
@@ -369,7 +369,7 @@ const hero = computed(() => store.hero)
         </div>
 
         <!-- Dice display -->
-        <div class="flex items-center justify-center py-1 shrink-0">
+        <div class="flex items-center justify-center shrink-0">
           <TableDicePair
             :die1="displayDie1"
             :die2="displayDie2"

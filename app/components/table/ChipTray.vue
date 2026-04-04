@@ -37,7 +37,7 @@ function selectChip(value: number) {
 </script>
 
 <template>
-  <div class="chip-tray flex items-center justify-center gap-3 py-3 px-4">
+  <div class="chip-tray flex items-center justify-center gap-3 py-1.5 px-4">
     <span class="text-neutral-400 text-xs font-medium uppercase tracking-wider mr-2">Chips</span>
     <button
       v-for="denom in chipDenominations"
