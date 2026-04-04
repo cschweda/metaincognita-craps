@@ -186,7 +186,7 @@ const puckY = computed(() => {
 <template>
   <div class="relative">
   <svg
-    viewBox="0 0 1200 600"
+    viewBox="-8 -8 1216 616"
     xmlns="http://www.w3.org/2000/svg"
     class="craps-table w-full h-auto select-none"
     :class="{ 'study-mode': studyMode }"
