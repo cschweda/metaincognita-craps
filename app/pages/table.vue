@@ -227,7 +227,7 @@ const hero = computed(() => store.hero)
 </script>
 
 <template>
-  <div class="table-page min-h-screen bg-neutral-950 flex flex-col">
+  <div class="table-page flex-1 bg-neutral-950 flex flex-col min-h-0">
     <!-- Top bar -->
     <header class="flex items-center justify-between px-4 py-2 bg-neutral-900/80 border-b border-neutral-800">
       <div class="flex items-center gap-3">

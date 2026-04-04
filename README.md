@@ -6,6 +6,8 @@ A visual, interactive casino craps simulator that plays like a real table — no
 
 Play at your own pace, or flip on auto-roll and rapid mode to grind through thousands of rolls and watch the house edge converge in real time. No money, no pressure, no judgment — just you, the dice, and the math.
 
+> **This is a single-player simulation only.** No real money is wagered, won, or lost. There is no multiplayer, no server, no accounts, and no connection to any casino or gambling service. All bankrolls and payouts are fictitious. The sole purpose is education — learning craps strategy, bet math, and house edge through interactive practice.
+
 ## Features
 
 - **Full visual craps table** — interactive SVG layout with every betting zone, animated dice, chip stacks, and an ON/OFF puck that moves with the point

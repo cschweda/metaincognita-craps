@@ -55,7 +55,7 @@ function startGame() {
 </script>
 
 <template>
-  <div class="min-h-screen bg-neutral-950 flex items-start justify-center px-4 py-10">
+  <div class="flex-1 bg-neutral-950 flex items-start justify-center px-4 py-10 overflow-y-auto">
     <div class="w-full max-w-[800px] space-y-8">
       <!-- Header -->
       <div class="text-center space-y-2">

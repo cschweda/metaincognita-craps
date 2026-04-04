@@ -4,11 +4,20 @@ All notable changes to this project will be documented in this file.
 
 ## [0.3.0] - 2026-04-04
 
+### App Shell & Navigation
+- **Top status bar**: Context-aware back button across all pages. On table page, warns before resetting session. On sub-pages, returns to previous page with game state preserved.
+- **Bottom status bar**: Persistent footer with links to History, Analysis, and GitHub repository.
+- **History page** (`/history`): Roll-by-roll session log with summary stats (total rolls, points made/missed, longest shooter).
+- **Analysis page** (`/analysis`): Statistical dashboard with P&L overview, roll distribution chart (actual vs. expected), and per-bet-type performance table.
+- **Default layout**: All pages wrapped in consistent layout with top/bottom bars. Game state auto-saves on navigation.
+- **Session indicator**: Pulsing green dot in top bar shows when an active session exists while browsing sub-pages.
+
 ### Polish & DX
 - **Hero image**: SVG + PNG hero banner for README with dice, chips, advisor panel, session stats, and casino aesthetic
 - **SPA loading screen**: Dark-themed loading template with animated dice and gold progress bar (eliminates white flash on load)
 - **Cache clean script**: `pnpm clean` removes `.nuxt` and `node_modules/.vite` for stale dependency issues
 - **README hero**: Hero image added to top of README
+- **Simulation disclaimer**: README now explicitly states this is a single-player simulation with no real money or gambling
 
 ## [0.2.0] - 2026-04-04
 
