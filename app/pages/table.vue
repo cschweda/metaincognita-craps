@@ -420,7 +420,7 @@ function handleAdvisorBet(betType: BetType) {
 
       <!-- Right: stats/advisor sidebar -->
       <aside
-        class="w-80 border-l border-neutral-800 shrink-0 transition-all duration-200 overflow-y-auto overflow-x-hidden"
+        class="w-80 border-l border-neutral-800 shrink-0 transition-all duration-200 overflow-hidden min-h-0"
         :class="showSidebar ? 'max-w-80' : 'max-w-0 border-l-0'"
       >
         <StatsAdvisorPanel @advisor-bet="handleAdvisorBet" />
