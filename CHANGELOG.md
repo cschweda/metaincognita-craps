@@ -4,6 +4,9 @@ All notable changes to this project will be documented in this file.
 
 ## [0.3.0] - 2026-04-04
 
+### Screenshots
+- **Setup and table screenshots**: Added setup screen and game table screenshots to README for a quick visual preview of the app.
+
 ### Advisor "Do This" Actions
 - **Clickable advisor recommendations**: The "DO THIS →" boxes in the advisor panel are now buttons when an actionable bet is available. Click to instantly place the recommended bet.
 - **Odds bets auto-max**: Clicking "DO THIS" for Pass Odds or Don't Pass Odds automatically places the maximum allowed odds bet.
