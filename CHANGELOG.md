@@ -2,6 +2,19 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.2.0] - 2026-04-04
+
+### Phase 3 — Game Loop & Hero Interaction
+- **Same Bet button**: Re-places the hero's previous bet configuration after a roll resolves. Skips bets invalid for the current phase.
+- **Auto-roll mode**: Toggle with configurable speed (1s, 2s, 3s, 5s). Countdown progress bar shows time to next roll. Pauses when hero interacts with the table.
+- **Rapid play mode**: Toggle that skips dice animation for faster rolls (~50ms per roll vs 800ms).
+- **Payout animations**: Floating +$X (green) and -$X (red) text rises from the table after each roll, staggered for multiple bets.
+- **Take-down mode**: Toggle that lets you click any removable bet to remove it. Contract bets (Pass/Come with point) stay locked.
+- **Keyboard shortcut**: Spacebar to roll dice.
+- **Shooter rotation**: Shows current shooter name in header. Roll button label changes from "Shoot" (hero is shooter) to "Roll" (bot is shooter).
+- **Auto-roll countdown bar**: Green progress bar below table shows time until next auto-roll.
+- **Same Bet tracks full config**: Saves all active bet types and amounts before each roll for accurate re-placement.
+
 ## [0.1.0] - 2026-04-04
 
 ### Phase 1 — Visual Foundation

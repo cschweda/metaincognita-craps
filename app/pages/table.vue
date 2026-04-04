@@ -1,20 +1,20 @@
 <script setup lang="ts">
-import type { BetType } from '~/utils/betTypes'
+import type { BetType, ActiveBet } from '~/utils/betTypes'
 import { BET_TYPE_TO_ZONE } from '~/utils/betTypes'
 import { crapsConfig } from '~~/craps.config'
 
 const store = useCrapsStore()
 const router = useRouter()
-const { placeBet, validateBet } = useBetManager()
+const { placeBet, validateBet, removeBet } = useBetManager()
 const { executeRoll } = useGameLoop()
 
-// Reverse mapping: zone ID -> BetType
+// ── Zone mapping ──
 const ZONE_TO_BET_TYPE: Record<string, BetType> = {} as Record<string, BetType>
 for (const [betType, zoneId] of Object.entries(BET_TYPE_TO_ZONE)) {
   ZONE_TO_BET_TYPE[zoneId] = betType as BetType
 }
 
-// On mount: check if game is initialized, try loading from storage
+// ── Init: load session or redirect ──
 onMounted(() => {
   if (store.phase === 'SETUP') {
     const loaded = store.loadFromLocalStorage()
@@ -25,103 +25,204 @@ onMounted(() => {
   }
 })
 
-// Dice animation state
+// ── Dice state ──
 const diceRolling = ref(false)
+const pendingDie1 = ref<number | null>(null)
+const pendingDie2 = ref<number | null>(null)
+const displayDie1 = computed(() => pendingDie1.value ?? store.currentRoll?.die1 ?? null)
+const displayDie2 = computed(() => pendingDie2.value ?? store.currentRoll?.die2 ?? null)
 
-// Compute which zones are disabled (can't place a bet there right now)
+// ── Rapid play mode (skip animations) ──
+const rapidPlay = ref(false)
+const rollDelay = computed(() => rapidPlay.value ? 50 : 800)
+
+// ── Auto-roll ──
+const autoRoll = ref(false)
+const autoRollSpeed = ref(2000) // ms between rolls
+const autoRollTimer = ref<ReturnType<typeof setTimeout> | null>(null)
+const autoRollCountdown = ref(0)
+let autoRollInterval: ReturnType<typeof setInterval> | null = null
+
+function startAutoRollTimer() {
+  stopAutoRollTimer()
+  if (!autoRoll.value || !canRoll.value) return
+  autoRollCountdown.value = autoRollSpeed.value
+  autoRollInterval = setInterval(() => {
+    autoRollCountdown.value -= 100
+    if (autoRollCountdown.value <= 0) {
+      stopAutoRollTimer()
+      handleRoll()
+    }
+  }, 100)
+}
+
+function stopAutoRollTimer() {
+  if (autoRollInterval) { clearInterval(autoRollInterval); autoRollInterval = null }
+  if (autoRollTimer.value) { clearTimeout(autoRollTimer.value); autoRollTimer.value = null }
+  autoRollCountdown.value = 0
+}
+
+watch(autoRoll, (on) => { if (!on) stopAutoRollTimer() })
+onUnmounted(() => stopAutoRollTimer())
+
+// ── Take-down mode ──
+const takeDownMode = ref(false)
+
+// ── Same Bet tracking ──
+const lastBetConfig = ref<Array<{ type: BetType; amount: number }>>([])
+
+function saveCurrentBets() {
+  lastBetConfig.value = store.activeBets
+    .filter(b => b.owner === 'hero' && b.status !== 'resolved')
+    .map(b => ({ type: b.type, amount: b.amount }))
+}
+
+function placeSameBet() {
+  if (lastBetConfig.value.length === 0) return
+  for (const prev of lastBetConfig.value) {
+    // Skip bets that are already active
+    const alreadyHas = store.activeBets.some(
+      b => b.owner === 'hero' && b.type === prev.type && b.status !== 'resolved'
+    )
+    if (alreadyHas) continue
+    // Skip bets invalid for current phase
+    const validation = validateBet(prev.type, prev.amount, 'hero', {
+      phase: store.phase, point: store.point, activeBets: store.activeBets,
+      tableRules: store.tableRules, rollNumber: store.rollNumber,
+      dontBetRemovedThisCycle: store.dontBetRemovedThisCycle
+    })
+    if (validation.valid) {
+      placeBet(prev.type, prev.amount, 'hero')
+    }
+  }
+}
+
+// ── Disabled zones ──
 const disabledZones = computed(() => {
   const disabled: string[] = []
   for (const [zoneId, betType] of Object.entries(ZONE_TO_BET_TYPE)) {
     const validation = validateBet(betType, store.selectedChipValue, 'hero', {
-      phase: store.phase,
-      point: store.point,
-      activeBets: store.activeBets,
-      tableRules: store.tableRules,
-      rollNumber: store.rollNumber,
+      phase: store.phase, point: store.point, activeBets: store.activeBets,
+      tableRules: store.tableRules, rollNumber: store.rollNumber,
       dontBetRemovedThisCycle: store.dontBetRemovedThisCycle
     })
-    if (!validation.valid) {
-      disabled.push(zoneId)
-    }
+    if (!validation.valid) disabled.push(zoneId)
   }
   return disabled
 })
 
+// ── Zone click: place or remove ──
 function handleZoneClick(zoneId: string) {
+  if (takeDownMode.value) {
+    // Remove the hero's bet on this zone
+    const bet = store.activeBets.find(
+      b => b.owner === 'hero' && BET_TYPE_TO_ZONE[b.type] === zoneId && b.status !== 'resolved'
+    )
+    if (bet) removeBet(bet.id)
+    return
+  }
   const betType = ZONE_TO_BET_TYPE[zoneId]
   if (!betType) return
   placeBet(betType, store.selectedChipValue, 'hero')
+  // Pause auto-roll when hero interacts
+  if (autoRoll.value) stopAutoRollTimer()
 }
 
-// Hero must have a Pass or Don't Pass bet to roll (MBS 3.7)
-const heroHasLineBet = computed(() => {
-  return store.activeBets.some(
-    b => b.owner === 'hero' && b.status !== 'resolved' && (b.type === 'pass' || b.type === 'dontPass')
-  )
-})
+// ── Roll logic ──
+const heroHasLineBet = computed(() =>
+  store.activeBets.some(b => b.owner === 'hero' && b.status !== 'resolved' && (b.type === 'pass' || b.type === 'dontPass'))
+)
 
-const canRoll = computed(() => {
-  return !diceRolling.value
-    && ['COME_OUT', 'POINT_PHASE'].includes(store.phase)
-    && heroHasLineBet.value
-})
+const canRoll = computed(() =>
+  !diceRolling.value && ['COME_OUT', 'POINT_PHASE'].includes(store.phase) && heroHasLineBet.value
+)
 
 const rollBlockedReason = computed(() => {
   if (diceRolling.value) return 'Rolling...'
   if (!['COME_OUT', 'POINT_PHASE'].includes(store.phase)) return 'Waiting for next phase'
-  if (!heroHasLineBet.value) return 'Place a Pass Line or Don\'t Pass bet first (MBS Rule 3.7)'
+  if (!heroHasLineBet.value) return "Place a Pass Line or Don't Pass bet first (MBS Rule 3.7)"
   return ''
 })
 
+// ── Payout animations ──
+const payoutFloaters = ref<Array<{ id: number; text: string; type: 'win' | 'lose' | 'push'; x: number }>>([])
+let floaterId = 0
+
+function showPayoutAnimations() {
+  const heroRes = store.lastResolutions.filter(r => r.owner === 'hero')
+  payoutFloaters.value = []
+  let delay = 0
+  for (const res of heroRes) {
+    const id = ++floaterId
+    const text = res.outcome === 'win' ? `+${formatCents(res.netGain)}`
+      : res.outcome === 'lose' ? formatCents(res.netGain)
+      : 'Push'
+    const x = 300 + (delay * 80) // stagger horizontally
+    setTimeout(() => {
+      payoutFloaters.value.push({ id, text, type: res.outcome as 'win' | 'lose' | 'push', x })
+      // Remove after animation
+      setTimeout(() => {
+        payoutFloaters.value = payoutFloaters.value.filter(f => f.id !== id)
+      }, 1500)
+    }, delay * 200)
+    delay++
+  }
+}
+
 function handleRoll() {
   if (!canRoll.value) return
+  stopAutoRollTimer()
 
-  // 1. Pre-roll the dice
+  // Save bet config before roll (for Same Bet)
+  saveCurrentBets()
+
   const d1 = Math.floor(Math.random() * 6) + 1
   const d2 = Math.floor(Math.random() * 6) + 1
   pendingDie1.value = d1
   pendingDie2.value = d2
-
-  // 2. Start animation
   diceRolling.value = true
 
-  // 3. After animation, resolve and unlock
   setTimeout(() => {
     try {
       executeRoll(d1, d2)
+      if (!rapidPlay.value) showPayoutAnimations()
     } finally {
       pendingDie1.value = null
       pendingDie2.value = null
       diceRolling.value = false
       store.animating = false
     }
-  }, 800)
+    // Queue next auto-roll if enabled
+    if (autoRoll.value) {
+      setTimeout(() => startAutoRollTimer(), rapidPlay.value ? 100 : 500)
+    }
+  }, rollDelay.value)
 }
 
-const pendingDie1 = ref<number | null>(null)
-const pendingDie2 = ref<number | null>(null)
-const displayDie1 = computed(() => pendingDie1.value ?? store.currentRoll?.die1 ?? null)
-const displayDie2 = computed(() => pendingDie2.value ?? store.currentRoll?.die2 ?? null)
+// ── Keyboard: spacebar to roll ──
+function onKeydown(e: KeyboardEvent) {
+  if (e.code === 'Space' && canRoll.value && !diceRolling.value) {
+    e.preventDefault()
+    handleRoll()
+  }
+}
+onMounted(() => window.addEventListener('keydown', onKeydown))
+onUnmounted(() => window.removeEventListener('keydown', onKeydown))
 
-// New game with confirmation
+// ── Shooter info ──
+const currentShooterName = computed(() => {
+  const shooter = store.players[store.shooterSeat]
+  return shooter?.name ?? 'Unknown'
+})
+const heroIsShooting = computed(() => store.shooterSeat === 0)
+
+// ── New game ──
 const showNewGameConfirm = ref(false)
+function requestNewGame() { showNewGameConfirm.value = true }
+function confirmNewGame() { store.clearSession(); router.push('/') }
 
-function requestNewGame() {
-  showNewGameConfirm.value = true
-}
-
-function confirmNewGame() {
-  store.clearSession()
-  router.push('/')
-}
-
-function cancelNewGame() {
-  showNewGameConfirm.value = false
-}
-
-// Sidebar toggle for mobile
+// ── Sidebar ──
 const showSidebar = ref(true)
-
 const hero = computed(() => store.hero)
 </script>
 
@@ -141,11 +242,50 @@ const hero = computed(() => store.hero)
         >
           ({{ (hero.bankroll - hero.startingBankroll) >= 0 ? '+' : '' }}{{ formatCents(hero.bankroll - hero.startingBankroll) }})
         </span>
+        <span v-if="!heroIsShooting" class="text-xs text-neutral-500 ml-2">
+          Shooter: {{ currentShooterName }}
+        </span>
       </div>
       <div class="flex items-center gap-2">
-        <span class="text-neutral-500 text-xs">
-          Roll #{{ store.rollNumber }}
-        </span>
+        <span class="text-neutral-500 text-xs">Roll #{{ store.rollNumber }}</span>
+
+        <!-- Rapid play toggle -->
+        <button
+          class="text-[10px] px-2 py-0.5 rounded border transition-colors"
+          :class="rapidPlay
+            ? 'border-amber-500 text-amber-400 bg-amber-500/10'
+            : 'border-neutral-700 text-neutral-500 hover:text-neutral-300'"
+          title="Rapid Play: skip dice animation for faster rolls"
+          @click="rapidPlay = !rapidPlay"
+        >
+          {{ rapidPlay ? 'RAPID ⚡' : 'Normal' }}
+        </button>
+
+        <!-- Auto-roll toggle -->
+        <button
+          class="text-[10px] px-2 py-0.5 rounded border transition-colors"
+          :class="autoRoll
+            ? 'border-emerald-500 text-emerald-400 bg-emerald-500/10'
+            : 'border-neutral-700 text-neutral-500 hover:text-neutral-300'"
+          :title="autoRoll ? 'Auto-roll ON — click to stop' : 'Auto-roll: automatically roll dice on a timer'"
+          @click="autoRoll = !autoRoll; if (autoRoll && canRoll) startAutoRollTimer()"
+        >
+          {{ autoRoll ? 'AUTO ●' : 'Auto' }}
+        </button>
+
+        <!-- Auto-roll speed selector -->
+        <select
+          v-if="autoRoll"
+          v-model.number="autoRollSpeed"
+          class="text-[10px] bg-neutral-800 text-neutral-400 border border-neutral-700 rounded px-1 py-0.5"
+          title="Time between auto-rolls"
+        >
+          <option :value="1000">1s</option>
+          <option :value="2000">2s</option>
+          <option :value="3000">3s</option>
+          <option :value="5000">5s</option>
+        </select>
+
         <UButton
           size="xs"
           variant="ghost"
@@ -174,17 +314,39 @@ const hero = computed(() => store.hero)
           <TableStickmanCall />
         </div>
 
-        <!-- Craps table SVG -->
-        <div class="flex-1 flex items-center justify-center px-2 overflow-hidden">
-          <div class="w-full max-w-[1100px]">
+        <!-- Craps table + payout floaters -->
+        <div class="flex-1 flex items-center justify-center px-2 overflow-hidden relative">
+          <div class="w-full max-w-[1100px] relative">
             <TableCrapsTable
               :active-bets="store.activeBets"
-              :disabled-zones="disabledZones"
+              :disabled-zones="takeDownMode ? [] : disabledZones"
               :puck-state="store.puckState"
               :puck-point="store.point"
               @zone-click="handleZoneClick"
             />
+            <!-- Payout floating text -->
+            <div
+              v-for="floater in payoutFloaters"
+              :key="floater.id"
+              class="absolute text-lg font-bold pointer-events-none payout-float"
+              :class="{
+                'text-emerald-400': floater.type === 'win',
+                'text-red-400': floater.type === 'lose',
+                'text-neutral-400': floater.type === 'push'
+              }"
+              :style="{ left: floater.x + 'px', top: '40%' }"
+            >
+              {{ floater.text }}
+            </div>
           </div>
+        </div>
+
+        <!-- Auto-roll countdown bar -->
+        <div v-if="autoRoll && autoRollCountdown > 0" class="h-1 bg-neutral-800 shrink-0">
+          <div
+            class="h-full bg-emerald-500 transition-all duration-100"
+            :style="{ width: ((autoRollCountdown / autoRollSpeed) * 100) + '%' }"
+          />
         </div>
 
         <!-- Dice display -->
@@ -192,7 +354,7 @@ const hero = computed(() => store.hero)
           <TableDicePair
             :die1="displayDie1"
             :die2="displayDie2"
-            :rolling="diceRolling"
+            :rolling="diceRolling && !rapidPlay"
           />
         </div>
 
@@ -201,7 +363,12 @@ const hero = computed(() => store.hero)
           <TableControlBar
             :can-roll="canRoll"
             :roll-blocked-reason="rollBlockedReason"
+            :take-down-mode="takeDownMode"
+            :has-same-bet="lastBetConfig.length > 0"
+            :hero-is-shooting="heroIsShooting"
             @roll="handleRoll"
+            @toggle-take-down="takeDownMode = !takeDownMode"
+            @same-bet="placeSameBet"
           />
         </div>
 
@@ -220,7 +387,7 @@ const hero = computed(() => store.hero)
       </aside>
     </div>
 
-    <!-- New Game confirmation dialog -->
+    <!-- New Game confirmation modal -->
     <UModal
       v-model:open="showNewGameConfirm"
       title="Leave Table?"
@@ -232,20 +399,20 @@ const hero = computed(() => store.hero)
           This will end your current session and return to the setup screen.
         </p>
       </template>
-
       <template #footer>
-        <UButton
-          variant="outline"
-          color="neutral"
-          label="Cancel"
-          @click="showNewGameConfirm = false"
-        />
-        <UButton
-          color="error"
-          label="Leave Table"
-          @click="confirmNewGame"
-        />
+        <UButton variant="outline" color="neutral" label="Cancel" @click="showNewGameConfirm = false" />
+        <UButton color="error" label="Leave Table" @click="confirmNewGame" />
       </template>
     </UModal>
   </div>
 </template>
+
+<style scoped>
+@keyframes float-up {
+  0% { opacity: 1; transform: translateY(0); }
+  100% { opacity: 0; transform: translateY(-60px); }
+}
+.payout-float {
+  animation: float-up 1.5s ease-out forwards;
+}
+</style>
