@@ -198,13 +198,20 @@ export function usePayoutCalc() {
 
   /**
    * Calculate C&E payout based on the roll.
+   * C&E is a 2-unit bet: one unit on Any Craps, one unit on Yo-Eleven.
+   * Only the winning unit pays; the other unit is lost.
    */
   function calculateCEPayout(amount: number, total: number): number {
+    const unitBet = Math.floor(amount / 2)
     if (total === 11) {
-      return amount + applyRatio(amount, payouts.ce.eleven)
+      // Yo unit wins at 15:1, craps unit lost
+      const unitWin = applyRatio(unitBet, payouts.ce.eleven)
+      return unitBet + unitWin
     }
     if (total === 2 || total === 3 || total === 12) {
-      return amount + applyRatio(amount, payouts.ce.craps)
+      // Craps unit wins at 7:1, yo unit lost
+      const unitWin = applyRatio(unitBet, payouts.ce.craps)
+      return unitBet + unitWin
     }
     return 0
   }
@@ -218,10 +225,27 @@ export function usePayoutCalc() {
     const ratio = payouts.horn[total]
     if (!ratio) return 0
     const unitWin = applyRatio(unitBet, ratio)
-    // Player gets the unit win + the winning unit back, but loses the other 3 units.
-    // Net returned = unitBet + unitWin (the winning unit's return) - 0 (3 lost units already deducted)
-    // Since totalBet was already deducted, payout = unitBet + unitWin
+    // Player gets the winning unit back + winnings. The other 3 units are lost.
+    // Since totalBet was already deducted on placement, payout = unitBet + unitWin
     return unitBet + unitWin
+  }
+
+  /**
+   * Calculate horn high payout. Horn High is a 5-unit bet: 2 units on the
+   * "high" number and 1 unit on each of the other three horn numbers.
+   * The high number is determined by the winning total:
+   * - If the roll matches one of the horn numbers, that number is treated as high.
+   * - This matches how most casinos handle horn high (player calls "horn high yo", etc.)
+   */
+  function calculateHornHighPayout(totalBet: number, total: number): number {
+    const unitBet = Math.floor(totalBet / 5)
+    const ratio = payouts.horn[total]
+    if (!ratio) return 0
+    // The winning number always gets the "high" (2-unit) portion
+    const winningUnits = 2
+    const winAmount = applyRatio(unitBet * winningUnits, ratio)
+    // Player gets back the winning portion + winnings. The other 3 units are lost.
+    return (unitBet * winningUnits) + winAmount
   }
 
   /**
@@ -243,6 +267,7 @@ export function usePayoutCalc() {
     calculateFieldPayout,
     calculateCEPayout,
     calculateHornPayout,
+    calculateHornHighPayout,
     getMaxOdds
   }
 }

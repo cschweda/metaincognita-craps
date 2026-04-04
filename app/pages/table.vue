@@ -68,6 +68,10 @@ onUnmounted(() => stopAutoRollTimer())
 // ── Take-down mode ──
 const takeDownMode = ref(false)
 
+// ── Study mode (pauses game, shows zone explanations on hover) ──
+const studyMode = ref(false)
+watch(studyMode, (on) => { if (on) stopAutoRollTimer() })
+
 // ── Same Bet tracking ──
 const lastBetConfig = ref<Array<{ type: BetType; amount: number }>>([])
 
@@ -113,6 +117,7 @@ const disabledZones = computed(() => {
 
 // ── Zone click: place or remove ──
 function handleZoneClick(zoneId: string) {
+  if (studyMode.value) return
   if (takeDownMode.value) {
     // Remove the hero's bet on this zone
     const bet = store.activeBets.find(
@@ -134,7 +139,7 @@ const heroHasLineBet = computed(() =>
 )
 
 const canRoll = computed(() =>
-  !diceRolling.value && ['COME_OUT', 'POINT_PHASE'].includes(store.phase) && heroHasLineBet.value
+  !diceRolling.value && !studyMode.value && ['COME_OUT', 'POINT_PHASE'].includes(store.phase) && heroHasLineBet.value
 )
 
 const rollBlockedReason = computed(() => {
@@ -286,6 +291,18 @@ const hero = computed(() => store.hero)
           <option :value="5000">5s</option>
         </select>
 
+        <!-- Study mode toggle -->
+        <button
+          class="text-[10px] px-2 py-0.5 rounded border transition-colors"
+          :class="studyMode
+            ? 'border-blue-500 text-blue-400 bg-blue-500/10'
+            : 'border-neutral-700 text-neutral-500 hover:text-neutral-300'"
+          :title="studyMode ? 'Study Mode ON — hover zones for explanations. Click to exit.' : 'Study Mode: pause game and explore every bet on the table'"
+          @click="studyMode = !studyMode"
+        >
+          {{ studyMode ? 'STUDY' : 'Study' }}
+        </button>
+
         <UButton
           size="xs"
           variant="ghost"
@@ -322,6 +339,8 @@ const hero = computed(() => store.hero)
               :disabled-zones="takeDownMode ? [] : disabledZones"
               :puck-state="store.puckState"
               :puck-point="store.point"
+              :study-mode="studyMode"
+              :game-phase="store.phase"
               @zone-click="handleZoneClick"
             />
             <!-- Payout floating text -->

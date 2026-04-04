@@ -4,6 +4,23 @@ All notable changes to this project will be documented in this file.
 
 ## [0.3.0] - 2026-04-04
 
+### Game Engine Fixes (Critical + High)
+- **Come Odds orphan fix**: OFF Come/Pass Odds are now returned to the player when their parent bet is resolved while odds are not working (e.g., come-out 7 with established Come bet)
+- **Seven-out sweep**: OFF Place/Buy/Hardways are swept as losses on seven-out. OFF odds are returned to player.
+- **Hop bet resolution**: `hopEasy` and `hopHard` bets now resolve correctly (15:1 and 30:1 payouts)
+- **C&E payout fix**: C&E is now a 2-unit bet — one unit on Any Craps (7:1), one unit on Yo (15:1). Previously overpaid by applying ratio to full amount.
+- **Horn High payout fix**: Horn High is now a 5-unit bet (2 units on the high number, 1 each on others). Previously used 4-unit Horn math.
+- **Don't Pass/Don't Come Odds max**: Lay odds now enforced — sized so payout doesn't exceed the equivalent pass odds max.
+- **dontPassOdds always working**: Can no longer be toggled off (was missing from the always-working check in `toggleBetWorking`).
+- **C&E/Horn High divisibility**: C&E requires divisible-by-2, Horn High requires divisible-by-5.
+
+### Study Mode
+- **Study Mode toggle**: New "Study" button in header pauses the game and lets you hover over any zone for a detailed explanation.
+- **Context-aware tooltips**: Study tooltips show bet name, house edge, full description, and current status (your bet amount, availability, why it's disabled).
+- **Cursor changes to help**: Visual indicator that betting is paused while studying.
+- **Auto-roll pauses**: Auto-roll stops when study mode is activated.
+- **Removed browser tooltips**: Removed native SVG `<title>` elements that caused random question mark cursors.
+
 ### App Shell & Navigation
 - **Top status bar**: Context-aware back button across all pages. On table page, warns before resetting session. On sub-pages, returns to previous page with game state preserved.
 - **Bottom status bar**: Persistent footer with links to History, Analysis, and GitHub repository.

@@ -102,6 +102,18 @@ export function useBetManager() {
       if (!point) {
         return { valid: false, reason: "Don't Pass Odds can only be placed after a point is established" }
       }
+      // Lay odds max: sized so the PAYOUT doesn't exceed the pass odds max
+      // (i.e., you can lay enough to WIN the same as a pass odds bettor)
+      const maxPassOdds = getMaxOdds(parentDontPass.amount, point, tableRules.oddsMultiple)
+      const dontOddsRatio = crapsConfig.payouts.dontOdds[point]
+      // Max lay = maxPassOdds / (payout ratio) so winnings ≤ maxPassOdds
+      // e.g., point 4: pass max = 3x flat. Lay ratio is 1:2. Max lay = 3x flat / (1/2) = 6x flat
+      const maxLay = dontOddsRatio
+        ? Math.floor(maxPassOdds * dontOddsRatio[1] / dontOddsRatio[0])
+        : maxPassOdds
+      if (amount > maxLay) {
+        return { valid: false, reason: `Maximum Don't Pass Odds for this point is ${maxLay} cents` }
+      }
     }
 
     if (type === 'comeOdds') {
@@ -124,6 +136,15 @@ export function useBetManager() {
       )
       if (!parentDontCome) {
         return { valid: false, reason: "Must have an established Don't Come bet to place Don't Come Odds" }
+      }
+      // Lay odds max: sized so the PAYOUT doesn't exceed the come odds max
+      const maxComeOdds = getMaxOdds(parentDontCome.amount, parentDontCome.pointNumber!, tableRules.oddsMultiple)
+      const dontOddsRatio = crapsConfig.payouts.dontOdds[parentDontCome.pointNumber!]
+      const maxLay = dontOddsRatio
+        ? Math.floor(maxComeOdds * dontOddsRatio[1] / dontOddsRatio[0])
+        : maxComeOdds
+      if (amount > maxLay) {
+        return { valid: false, reason: `Maximum Don't Come Odds for this point is ${maxLay} cents` }
       }
     }
 
@@ -149,6 +170,14 @@ export function useBetManager() {
     // Horn must be divisible by 4
     if (type === 'horn' && amount % 4 !== 0) {
       return { valid: false, reason: 'Horn bet must be divisible by 4' }
+    }
+    // Horn High must be divisible by 5
+    if (type === 'hornHigh' && amount % 5 !== 0) {
+      return { valid: false, reason: 'Horn High bet must be divisible by 5' }
+    }
+    // C&E must be divisible by 2
+    if (type === 'crapsEleven' && amount % 2 !== 0) {
+      return { valid: false, reason: 'C&E bet must be divisible by 2' }
     }
 
     // Bankroll check
@@ -300,8 +329,8 @@ export function useBetManager() {
     const bet = store.activeBets.find(b => b.id === betId)
     if (!bet) return false
 
-    // Lay bets and Don't Come odds are always working - cannot toggle off
-    if (isLayBet(bet.type) || bet.type === 'dontComeOdds') {
+    // Lay bets and Don't odds are always working - cannot toggle off
+    if (isLayBet(bet.type) || bet.type === 'dontComeOdds' || bet.type === 'dontPassOdds') {
       console.warn('This bet is always working and cannot be toggled off')
       return false
     }

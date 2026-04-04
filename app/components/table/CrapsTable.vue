@@ -8,6 +8,8 @@ interface Props {
   puckState?: 'ON' | 'OFF'
   puckPoint?: number | null
   devReferenceUnderlay?: boolean
+  studyMode?: boolean
+  gamePhase?: string
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -16,6 +18,8 @@ const props = withDefaults(defineProps<Props>(), {
   puckState: 'OFF',
   puckPoint: null,
   devReferenceUnderlay: false,
+  studyMode: false,
+  gamePhase: 'SETUP',
 })
 
 const emit = defineEmits<{
@@ -27,8 +31,74 @@ function isDisabled(zoneId: string): boolean {
 }
 
 function handleZoneClick(zoneId: string) {
+  if (props.studyMode) return
   if (!isDisabled(zoneId)) {
     emit('zone-click', zoneId)
+  }
+}
+
+// ── Study mode hover state ──
+const studyHoveredZone = ref<string | null>(null)
+const studyTooltipPos = ref({ x: 0, y: 0 })
+
+/** Delegated mouse handler — finds closest zone <g> and extracts its id */
+function handleStudyMouseMove(event: MouseEvent) {
+  if (!props.studyMode) {
+    if (studyHoveredZone.value) studyHoveredZone.value = null
+    return
+  }
+  const target = event.target as Element
+  const zoneEl = target?.closest?.('.zone')
+  const zoneId = zoneEl?.id || null
+  if (zoneId && zoneDescriptions[zoneId]) {
+    studyHoveredZone.value = zoneId
+    const svg = target.closest('svg')
+    if (svg) {
+      const rect = svg.getBoundingClientRect()
+      studyTooltipPos.value = {
+        x: event.clientX - rect.left,
+        y: event.clientY - rect.top
+      }
+    }
+  } else {
+    studyHoveredZone.value = null
+  }
+}
+
+function handleStudyMouseLeave() {
+  studyHoveredZone.value = null
+}
+
+/** Get context-aware study explanation for a zone */
+function getStudyExplanation(zoneId: string): { title: string; body: string; status: string; edge: string } | null {
+  const info = zoneDescriptions[zoneId]
+  if (!info) return null
+
+  const hasBet = zoneBetTotal(zoneId) > 0
+  const betAmount = zoneBetTotal(zoneId)
+  const disabled = isDisabled(zoneId)
+  const phase = props.gamePhase
+
+  let status = ''
+  if (hasBet) {
+    status = `You have ${formatChipAmount(betAmount)} on this bet.`
+  } else if (disabled) {
+    if (phase === 'COME_OUT' && ['come', 'dont-come', 'come-odds', 'dont-come-odds'].includes(zoneId)) {
+      status = 'Only available during the point phase.'
+    } else if (phase === 'POINT_PHASE' && ['pass-line', 'dont-pass'].includes(zoneId)) {
+      status = 'Only available on the come-out roll.'
+    } else {
+      status = 'Not available right now.'
+    }
+  } else {
+    status = 'Available — click to place a bet.'
+  }
+
+  return {
+    title: info.name,
+    body: info.desc,
+    status,
+    edge: info.edge
   }
 }
 
@@ -66,14 +136,6 @@ const zoneDescriptions: Record<string, { name: string; desc: string; edge: strin
   'horn-high': { name: 'Horn High', desc: '5-unit bet: 4 units as Horn + 1 extra on a chosen number.', edge: '12.50%' },
   'hop-easy': { name: 'Hop (Easy)', desc: 'One-roll bet on a specific non-pair combo. Pays 15:1.', edge: '11.11%' },
   'hop-hard': { name: 'Hop (Hard)', desc: 'One-roll bet on a specific pair combo. Pays 30:1.', edge: '13.89%' },
-}
-
-function getTooltip(zoneId: string): string {
-  const info = zoneDescriptions[zoneId]
-  if (!info) return ''
-  const disabled = isDisabled(zoneId)
-  const status = disabled ? ' [Not available now]' : ' [Click to bet]'
-  return `${info.name} (${info.edge} house edge)\n${info.desc}${status}`
 }
 
 /** Get bets placed on a specific zone */
@@ -122,11 +184,15 @@ const puckY = computed(() => {
 </script>
 
 <template>
+  <div class="relative">
   <svg
     viewBox="0 0 1200 600"
     xmlns="http://www.w3.org/2000/svg"
     class="craps-table w-full h-auto select-none"
+    :class="{ 'study-mode': studyMode }"
     :aria-label="'Craps table'"
+    @mousemove="handleStudyMouseMove"
+    @mouseleave="handleStudyMouseLeave"
   >
     <defs>
       <!-- Slight transparency fill for zone interactivity -->
@@ -190,7 +256,6 @@ const puckY = computed(() => {
         :class="{ disabled: isDisabled('place-4') }"
         @click="handleZoneClick('place-4')"
       >
-        <title>{{ getTooltip('place-4') }}</title>
         <rect x="105" y="30" width="100" height="80" rx="3" class="zone-fill" />
         <text x="155" y="58" class="label-number">4</text>
         <text x="155" y="98" class="label-payout">9 to 5</text>
@@ -204,7 +269,6 @@ const puckY = computed(() => {
         :class="{ disabled: isDisabled('place-5') }"
         @click="handleZoneClick('place-5')"
       >
-        <title>{{ getTooltip('place-5') }}</title>
         <rect x="205" y="30" width="100" height="80" rx="3" class="zone-fill" />
         <text x="255" y="58" class="label-number">5</text>
         <text x="255" y="98" class="label-payout">7 to 5</text>
@@ -217,7 +281,6 @@ const puckY = computed(() => {
         :class="{ disabled: isDisabled('place-six') }"
         @click="handleZoneClick('place-six')"
       >
-        <title>{{ getTooltip('place-six') }}</title>
         <rect x="305" y="30" width="100" height="80" rx="3" class="zone-fill" />
         <text x="355" y="58" class="label-number">SIX</text>
         <text x="355" y="98" class="label-payout">7 to 6</text>
@@ -230,7 +293,6 @@ const puckY = computed(() => {
         :class="{ disabled: isDisabled('place-8') }"
         @click="handleZoneClick('place-8')"
       >
-        <title>{{ getTooltip('place-8') }}</title>
         <rect x="405" y="30" width="100" height="80" rx="3" class="zone-fill" />
         <text x="455" y="58" class="label-number">8</text>
         <text x="455" y="98" class="label-payout">7 to 6</text>
@@ -243,7 +305,6 @@ const puckY = computed(() => {
         :class="{ disabled: isDisabled('place-nine') }"
         @click="handleZoneClick('place-nine')"
       >
-        <title>{{ getTooltip('place-nine') }}</title>
         <rect x="505" y="30" width="100" height="80" rx="3" class="zone-fill" />
         <text x="555" y="58" class="label-number">NINE</text>
         <text x="555" y="98" class="label-payout">7 to 5</text>
@@ -256,7 +317,6 @@ const puckY = computed(() => {
         :class="{ disabled: isDisabled('place-10') }"
         @click="handleZoneClick('place-10')"
       >
-        <title>{{ getTooltip('place-10') }}</title>
         <rect x="605" y="30" width="100" height="80" rx="3" class="zone-fill" />
         <text x="655" y="58" class="label-number">10</text>
         <text x="655" y="98" class="label-payout">9 to 5</text>
@@ -271,7 +331,6 @@ const puckY = computed(() => {
         :class="{ disabled: isDisabled('big-6') }"
         @click="handleZoneClick('big-6')"
       >
-        <title>{{ getTooltip('big-6') }}</title>
         <rect x="30" y="30" width="75" height="40" rx="3" class="zone-fill" />
         <text x="67" y="56" class="label-big">BIG 6</text>
       </g>
@@ -281,7 +340,6 @@ const puckY = computed(() => {
         :class="{ disabled: isDisabled('big-8') }"
         @click="handleZoneClick('big-8')"
       >
-        <title>{{ getTooltip('big-8') }}</title>
         <rect x="30" y="70" width="75" height="40" rx="3" class="zone-fill" />
         <text x="67" y="96" class="label-big">BIG 8</text>
       </g>
@@ -294,7 +352,6 @@ const puckY = computed(() => {
       :class="{ disabled: isDisabled('dont-come') }"
       @click="handleZoneClick('dont-come')"
     >
-      <title>{{ getTooltip('dont-come') }}</title>
       <rect x="105" y="115" width="600" height="35" rx="3" class="zone-fill" />
       <text x="405" y="138" class="label-main">DON'T COME BAR</text>
     </g>
@@ -306,7 +363,6 @@ const puckY = computed(() => {
       :class="{ disabled: isDisabled('come') }"
       @click="handleZoneClick('come')"
     >
-      <title>{{ getTooltip('come') }}</title>
       <rect x="105" y="155" width="600" height="90" rx="3" class="zone-fill" />
       <text x="405" y="210" class="label-large">COME</text>
     </g>
@@ -318,7 +374,6 @@ const puckY = computed(() => {
       :class="{ disabled: isDisabled('field') }"
       @click="handleZoneClick('field')"
     >
-      <title>{{ getTooltip('field') }}</title>
       <rect x="105" y="250" width="600" height="65" rx="3" class="zone-fill" />
       <text x="135" y="290" class="label-field-title">FIELD</text>
       <!-- Field numbers -->
@@ -337,7 +392,6 @@ const puckY = computed(() => {
       :class="{ disabled: isDisabled('dont-pass') }"
       @click="handleZoneClick('dont-pass')"
     >
-      <title>{{ getTooltip('dont-pass') }}</title>
       <rect x="105" y="320" width="600" height="35" rx="3" class="zone-fill" />
       <text x="405" y="343" class="label-main">DON'T PASS BAR</text>
       <text x="580" y="343" class="label-dp-twelve">&#9323;</text>
@@ -350,7 +404,6 @@ const puckY = computed(() => {
       :class="{ disabled: isDisabled('pass-line') }"
       @click="handleZoneClick('pass-line')"
     >
-      <title>{{ getTooltip('pass-line') }}</title>
       <!-- Bottom horizontal strip -->
       <path
         d="M 30,360 L 705,360 L 705,570 L 30,570 Z"
@@ -368,7 +421,6 @@ const puckY = computed(() => {
       :class="{ disabled: isDisabled('pass-odds'), 'odds-available': !isDisabled('pass-odds') && zoneBetTotal('pass-odds') === 0 }"
       @click="handleZoneClick('pass-odds')"
     >
-      <title>{{ getTooltip('pass-odds') }}</title>
       <rect x="200" y="370" width="340" height="55" rx="5" class="zone-fill-odds-area" />
       <text
         v-if="zoneBetTotal('pass-odds') === 0 && !isDisabled('pass-odds')"
@@ -384,7 +436,6 @@ const puckY = computed(() => {
       :class="{ disabled: isDisabled('dont-pass-odds'), 'odds-available': !isDisabled('dont-pass-odds') && zoneBetTotal('dont-pass-odds') === 0 }"
       @click="handleZoneClick('dont-pass-odds')"
     >
-      <title>{{ getTooltip('dont-pass-odds') }}</title>
       <rect x="200" y="320" width="200" height="35" rx="3" class="zone-fill-odds-area" />
       <text
         v-if="zoneBetTotal('dont-pass-odds') === 0 && !isDisabled('dont-pass-odds')"
@@ -400,7 +451,6 @@ const puckY = computed(() => {
       :class="{ disabled: isDisabled('come-odds') }"
       @click="handleZoneClick('come-odds')"
     >
-      <title>{{ getTooltip('come-odds') }}</title>
       <!-- Come odds appear as a small zone above each number box where a come bet is established -->
     </g>
 
@@ -411,7 +461,6 @@ const puckY = computed(() => {
       :class="{ disabled: isDisabled('dont-come-odds') }"
       @click="handleZoneClick('dont-come-odds')"
     >
-      <title>{{ getTooltip('dont-come-odds') }}</title>
     </g>
 
     <!-- ==================== CENTER PROPOSITION BETS ==================== -->
@@ -430,7 +479,6 @@ const puckY = computed(() => {
           :class="{ disabled: isDisabled('hard-4') }"
           @click="handleZoneClick('hard-4')"
         >
-          <title>{{ getTooltip('hard-4') }}</title>
           <rect x="10" y="0" width="100" height="55" rx="3" class="zone-fill-prop" />
           <text x="60" y="20" class="label-prop">HARD 4</text>
           <text x="60" y="42" class="label-prop-payout">7 to 1</text>
@@ -443,7 +491,6 @@ const puckY = computed(() => {
           :class="{ disabled: isDisabled('hard-6') }"
           @click="handleZoneClick('hard-6')"
         >
-          <title>{{ getTooltip('hard-6') }}</title>
           <rect x="115" y="0" width="100" height="55" rx="3" class="zone-fill-prop" />
           <text x="165" y="20" class="label-prop">HARD 6</text>
           <text x="165" y="42" class="label-prop-payout">9 to 1</text>
@@ -456,7 +503,6 @@ const puckY = computed(() => {
           :class="{ disabled: isDisabled('hard-8') }"
           @click="handleZoneClick('hard-8')"
         >
-          <title>{{ getTooltip('hard-8') }}</title>
           <rect x="220" y="0" width="100" height="55" rx="3" class="zone-fill-prop" />
           <text x="270" y="20" class="label-prop">HARD 8</text>
           <text x="270" y="42" class="label-prop-payout">9 to 1</text>
@@ -469,7 +515,6 @@ const puckY = computed(() => {
           :class="{ disabled: isDisabled('hard-10') }"
           @click="handleZoneClick('hard-10')"
         >
-          <title>{{ getTooltip('hard-10') }}</title>
           <rect x="325" y="0" width="100" height="55" rx="3" class="zone-fill-prop" />
           <text x="375" y="20" class="label-prop">HARD 10</text>
           <text x="375" y="42" class="label-prop-payout">7 to 1</text>
@@ -483,7 +528,6 @@ const puckY = computed(() => {
         :class="{ disabled: isDisabled('any-seven') }"
         @click="handleZoneClick('any-seven')"
       >
-        <title>{{ getTooltip('any-seven') }}</title>
         <rect x="10" y="105" width="420" height="50" rx="3" class="zone-fill-prop" />
         <text x="220" y="128" class="label-prop-large">ANY SEVEN</text>
         <text x="220" y="148" class="label-prop-payout">4 to 1</text>
@@ -496,7 +540,6 @@ const puckY = computed(() => {
         :class="{ disabled: isDisabled('any-craps') }"
         @click="handleZoneClick('any-craps')"
       >
-        <title>{{ getTooltip('any-craps') }}</title>
         <rect x="10" y="165" width="420" height="50" rx="3" class="zone-fill-prop" />
         <text x="220" y="188" class="label-prop-large">ANY CRAPS</text>
         <text x="220" y="208" class="label-prop-payout">7 to 1</text>
@@ -511,7 +554,6 @@ const puckY = computed(() => {
           :class="{ disabled: isDisabled('aces') }"
           @click="handleZoneClick('aces')"
         >
-          <title>{{ getTooltip('aces') }}</title>
           <rect x="10" y="0" width="100" height="60" rx="3" class="zone-fill-prop" />
           <text x="60" y="20" class="label-prop">ACES</text>
           <text x="60" y="36" class="label-prop-sub">(Snake Eyes)</text>
@@ -525,7 +567,6 @@ const puckY = computed(() => {
           :class="{ disabled: isDisabled('ace-deuce') }"
           @click="handleZoneClick('ace-deuce')"
         >
-          <title>{{ getTooltip('ace-deuce') }}</title>
           <rect x="115" y="0" width="100" height="60" rx="3" class="zone-fill-prop" />
           <text x="165" y="20" class="label-prop">ACE-DEUCE</text>
           <text x="165" y="36" class="label-prop-sub">(Three)</text>
@@ -539,7 +580,6 @@ const puckY = computed(() => {
           :class="{ disabled: isDisabled('yo-eleven') }"
           @click="handleZoneClick('yo-eleven')"
         >
-          <title>{{ getTooltip('yo-eleven') }}</title>
           <rect x="220" y="0" width="100" height="60" rx="3" class="zone-fill-prop" />
           <text x="270" y="20" class="label-prop">YO</text>
           <text x="270" y="36" class="label-prop-sub">(Eleven)</text>
@@ -553,7 +593,6 @@ const puckY = computed(() => {
           :class="{ disabled: isDisabled('boxcars') }"
           @click="handleZoneClick('boxcars')"
         >
-          <title>{{ getTooltip('boxcars') }}</title>
           <rect x="325" y="0" width="100" height="60" rx="3" class="zone-fill-prop" />
           <text x="375" y="20" class="label-prop">BOXCARS</text>
           <text x="375" y="36" class="label-prop-sub">(Twelve)</text>
@@ -568,7 +607,6 @@ const puckY = computed(() => {
         :class="{ disabled: isDisabled('craps-eleven') }"
         @click="handleZoneClick('craps-eleven')"
       >
-        <title>{{ getTooltip('craps-eleven') }}</title>
         <rect x="10" y="300" width="205" height="50" rx="3" class="zone-fill-prop" />
         <text x="112" y="322" class="label-prop-large">C &amp; E</text>
         <text x="112" y="342" class="label-prop-sub">Craps &amp; Eleven</text>
@@ -581,7 +619,6 @@ const puckY = computed(() => {
         :class="{ disabled: isDisabled('horn') }"
         @click="handleZoneClick('horn')"
       >
-        <title>{{ getTooltip('horn') }}</title>
         <rect x="220" y="300" width="100" height="50" rx="3" class="zone-fill-prop" />
         <text x="270" y="322" class="label-prop-large">HORN</text>
         <text x="270" y="342" class="label-prop-sub">2-3-11-12</text>
@@ -594,7 +631,6 @@ const puckY = computed(() => {
         :class="{ disabled: isDisabled('horn-high') }"
         @click="handleZoneClick('horn-high')"
       >
-        <title>{{ getTooltip('horn-high') }}</title>
         <rect x="325" y="300" width="100" height="50" rx="3" class="zone-fill-prop" />
         <text x="375" y="322" class="label-prop-large">HORN</text>
         <text x="375" y="342" class="label-prop-sub">HIGH</text>
@@ -607,7 +643,6 @@ const puckY = computed(() => {
         :class="{ disabled: isDisabled('hop-easy') }"
         @click="handleZoneClick('hop-easy')"
       >
-        <title>{{ getTooltip('hop-easy') }}</title>
         <rect x="10" y="360" width="205" height="40" rx="3" class="zone-fill-prop" />
         <text x="112" y="378" class="label-prop-sub">HOP (Easy)</text>
         <text x="112" y="394" class="label-prop-payout">15 to 1</text>
@@ -619,7 +654,6 @@ const puckY = computed(() => {
         :class="{ disabled: isDisabled('hop-hard') }"
         @click="handleZoneClick('hop-hard')"
       >
-        <title>{{ getTooltip('hop-hard') }}</title>
         <rect x="220" y="360" width="205" height="40" rx="3" class="zone-fill-prop" />
         <text x="322" y="378" class="label-prop-sub">HOP (Hard)</text>
         <text x="322" y="394" class="label-prop-payout">30 to 1</text>
@@ -791,6 +825,22 @@ const puckY = computed(() => {
       </g>
     </g>
   </svg>
+
+  <!-- Study mode tooltip (HTML overlay) -->
+  <div
+    v-if="studyMode && studyHoveredZone && getStudyExplanation(studyHoveredZone)"
+    class="study-tooltip"
+    :style="{
+      left: Math.min(studyTooltipPos.x + 16, 800) + 'px',
+      top: (studyTooltipPos.y - 10) + 'px'
+    }"
+  >
+    <div class="study-tooltip-title">{{ getStudyExplanation(studyHoveredZone)!.title }}</div>
+    <div class="study-tooltip-edge">House edge: {{ getStudyExplanation(studyHoveredZone)!.edge }}</div>
+    <div class="study-tooltip-body">{{ getStudyExplanation(studyHoveredZone)!.body }}</div>
+    <div class="study-tooltip-status">{{ getStudyExplanation(studyHoveredZone)!.status }}</div>
+  </div>
+  </div>
 </template>
 
 <style scoped>
@@ -1112,5 +1162,63 @@ const puckY = computed(() => {
   font-weight: bold;
   text-anchor: middle;
   dominant-baseline: central;
+}
+
+/* ===== Study mode ===== */
+.study-mode {
+  cursor: help !important;
+}
+
+.study-mode .zone {
+  cursor: help !important;
+}
+
+.study-mode .zone:hover .zone-fill,
+.study-mode .zone:hover .zone-fill-prop {
+  fill: rgba(60, 120, 180, 0.4);
+}
+
+.study-tooltip {
+  position: absolute;
+  z-index: 100;
+  max-width: 320px;
+  background: rgba(10, 15, 25, 0.95);
+  border: 1px solid #2a4a4a;
+  border-radius: 8px;
+  padding: 12px 14px;
+  pointer-events: none;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6);
+}
+
+.study-tooltip-title {
+  color: #f0d060;
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 14px;
+  font-weight: bold;
+  letter-spacing: 1px;
+  margin-bottom: 4px;
+}
+
+.study-tooltip-edge {
+  color: #4aeeff;
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 11px;
+  margin-bottom: 8px;
+}
+
+.study-tooltip-body {
+  color: #c0c8d0;
+  font-family: 'Arial', sans-serif;
+  font-size: 12px;
+  line-height: 1.5;
+  margin-bottom: 8px;
+}
+
+.study-tooltip-status {
+  color: #4aee8a;
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 11px;
+  padding-top: 6px;
+  border-top: 1px solid #1e3333;
 }
 </style>

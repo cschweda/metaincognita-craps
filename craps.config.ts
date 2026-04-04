@@ -42,7 +42,9 @@ export const crapsConfig = {
     big6: { win: [1, 1] as [number, number] },
     big8: { win: [1, 1] as [number, number] },
     horn: { 2: [30, 1], 3: [15, 1], 11: [15, 1], 12: [30, 1] } as Record<number, [number, number]>,
-    ce: { craps: [3, 1] as [number, number], eleven: [7, 1] as [number, number] }
+    ce: { craps: [3, 1] as [number, number], eleven: [7, 1] as [number, number] },
+    hopEasy: { win: [15, 1] as [number, number] },
+    hopHard: { win: [30, 1] as [number, number] }
   },
 
   houseEdges: {
