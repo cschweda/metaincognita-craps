@@ -18,7 +18,9 @@ Play at your own pace, or flip on auto-roll and rapid mode to grind through thou
 - **8 bot co-bettors** — watch Conservative Carl, Martingale Mike, Iron Cross Irene, and five other named strategies play alongside you with their own bankrolls
 - **Session stats** — roll distribution charts, per-bet-type win/loss tracking, P&L over time, point conversion rates, and gambler's fallacy warnings
 - **Configurable everything** — 5 stake levels ($5–$500 tables), odds multiples (1x to 100x), field payouts, vig timing, payout rounding
-- **Mathematically verified** — integer-cent arithmetic prevents rounding errors, chi-squared validated dice, house edge convergence tests for every bet type
+- **Study mode** — pause the game and hover over any zone for a detailed explanation: bet name, house edge, how it works, and whether you have chips on it. Learn the entire layout without risking a roll.
+- **History + analysis pages** — full roll-by-roll log, roll distribution chart (actual vs. expected), per-bet-type W/L/P breakdown, point conversion rate, and net P&L tracking. Navigate freely — game state is preserved.
+- **Mathematically verified** — integer-cent arithmetic prevents rounding errors, chi-squared validated dice, house edge convergence tests for every bet type. Payout math reviewed against MBS rules for all 44 bet types including C&E (2-unit split), Horn (4-unit), Horn High (5-unit), and Hop bets.
 - **Casino atmosphere** — dark emerald felt, gold accents, stickman calls ("Seven out! Line away!"), and floating payout animations
 
 ## Rules Reference
@@ -78,10 +80,11 @@ The test suite includes:
 
 ```
 app/
-├── pages/           # Setup (/) and Table (/table)
+├── pages/           # Setup (/), Table (/table), History (/history), Analysis (/analysis)
+├── layouts/         # Default layout with top/bottom status bars
 ├── components/
 │   ├── setup/       # Setup page components
-│   ├── table/       # Game table components
+│   ├── table/       # Game table components (CrapsTable, DicePair, ControlBar, etc.)
 │   └── stats/       # Advisor & stats panel
 ├── composables/     # Game engine (dice, bets, payouts, game loop, advisor)
 ├── stores/          # Single Pinia store (useCrapsStore)
