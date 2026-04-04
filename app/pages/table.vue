@@ -332,7 +332,7 @@ const hero = computed(() => store.hero)
         </div>
 
         <!-- Craps table + payout floaters -->
-        <div class="flex-1 flex items-center justify-center px-2 overflow-hidden relative min-h-0">
+        <div class="flex-1 flex items-center justify-center px-2 py-1 overflow-hidden relative min-h-0">
           <div class="w-full max-w-[1100px] relative">
             <TableCrapsTable
               :active-bets="store.activeBets"
