@@ -62,7 +62,7 @@ describe('getStickmanCall', () => {
   it('calls the point winner with the hard-way suffix', () => {
     const call = getStickmanCall(roll(2, 2), 'POINT_PHASE', 4)
     expect(call.type).toBe('winner')
-    expect(call.message).toBe('4! Winner the hard way!! Pay the line!')
+    expect(call.message).toBe('4! Winner the hard way! Pay the line!')
   })
 
   it('calls come-out natural seven', () => {

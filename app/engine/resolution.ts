@@ -555,7 +555,7 @@ export function getStickmanCall(
 
   // Point made
   if (phase === 'POINT_PHASE' && total === point) {
-    const hardStr = isHard ? ' the hard way!' : ''
+    const hardStr = isHard ? ' the hard way' : ''
     return { message: `${total}! Winner${hardStr}! Pay the line!`, type: 'winner' }
   }
 
