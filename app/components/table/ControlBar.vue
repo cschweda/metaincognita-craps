@@ -12,8 +12,8 @@ const props = defineProps<{
   heroIsShooting: boolean
 }>()
 
-const emit = defineEmits<{
-  roll: []
+const _emit = defineEmits<{
+  'roll': []
   'toggle-take-down': []
   'same-bet': []
 }>()
@@ -101,36 +101,49 @@ const rollTooltip = computed(() => {
     <!-- Quick bet buttons -->
     <div class="flex items-center gap-1.5">
       <UButton
-        size="xs" variant="outline" label="Pass"
+        size="xs"
+        variant="outline"
+        label="Pass"
         :disabled="!canPlacePass"
         :class="canPlacePass ? 'cursor-pointer' : 'cursor-not-allowed'"
         :title="canPlacePass ? 'Place minimum on Pass Line (1.41% edge)' : 'Only during Come-Out phase'"
-        color="neutral" @click="quickBet('pass')"
+        color="neutral"
+        @click="quickBet('pass')"
       />
       <UButton
-        size="xs" variant="outline" label="Come"
+        size="xs"
+        variant="outline"
+        label="Come"
         :disabled="!canPlaceCome"
         :class="canPlaceCome ? 'cursor-pointer' : 'cursor-not-allowed'"
         :title="canPlaceCome ? 'Place minimum on Come (1.41% edge)' : 'Only during Point phase'"
-        color="neutral" @click="quickBet('come')"
+        color="neutral"
+        @click="quickBet('come')"
       />
       <UButton
-        size="xs" variant="outline" label="Pl 6"
+        size="xs"
+        variant="outline"
+        label="Pl 6"
         :disabled="!canPlacePlace"
         :class="canPlacePlace ? 'cursor-pointer' : 'cursor-not-allowed'"
         title="Place 6 — pays 7:6 (1.52% edge)"
-        color="neutral" @click="quickBet('place6')"
+        color="neutral"
+        @click="quickBet('place6')"
       />
       <UButton
-        size="xs" variant="outline" label="Pl 8"
+        size="xs"
+        variant="outline"
+        label="Pl 8"
         :disabled="!canPlacePlace"
         :class="canPlacePlace ? 'cursor-pointer' : 'cursor-not-allowed'"
         title="Place 8 — pays 7:6 (1.52% edge)"
-        color="neutral" @click="quickBet('place8')"
+        color="neutral"
+        @click="quickBet('place8')"
       />
       <UButton
         v-if="showOddsButton"
-        size="xs" variant="outline"
+        size="xs"
+        variant="outline"
         :label="canPlacePassOdds ? 'Max Odds' : 'Lay Odds'"
         class="cursor-pointer border-emerald-500/60 text-emerald-400 hover:bg-emerald-500/20"
         :title="'Place max odds — 0% house edge!'"
@@ -141,7 +154,8 @@ const rollTooltip = computed(() => {
 
     <!-- Same Bet -->
     <UButton
-      size="xs" variant="outline"
+      size="xs"
+      variant="outline"
       label="Same Bet"
       :disabled="!props.hasSameBet"
       :class="props.hasSameBet ? 'cursor-pointer' : 'cursor-not-allowed'"
@@ -152,7 +166,8 @@ const rollTooltip = computed(() => {
 
     <!-- Take Down toggle -->
     <UButton
-      size="xs" variant="outline"
+      size="xs"
+      variant="outline"
       :label="props.takeDownMode ? 'Done' : 'Take Down'"
       :class="props.takeDownMode ? 'border-red-500 text-red-400 bg-red-500/10' : 'cursor-pointer'"
       :title="props.takeDownMode

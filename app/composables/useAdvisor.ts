@@ -18,7 +18,9 @@ const WAYS: Record<number, number> = { 4: 3, 5: 4, 6: 5, 8: 5, 9: 4, 10: 3 }
 const ODDS_PAYOUTS: Record<number, string> = { 4: '2 to 1', 5: '3 to 2', 6: '6 to 5', 8: '6 to 5', 9: '3 to 2', 10: '2 to 1' }
 const ODDS_MULTIPLES: Record<string, Record<number, number>> = crapsConfig.oddsMultiples
 
-function fc(cents: number): string { return formatCents(cents) }
+function fc(cents: number): string {
+  return formatCents(cents)
+}
 
 export function useAdvisor() {
   const store = useCrapsStore()
@@ -130,7 +132,7 @@ export function useAdvisor() {
           houseEdge: 0.01414
         })
         recs.push({
-          action: "Or bet on Don't Pass (the opposite)",
+          action: 'Or bet on Don\'t Pass (the opposite)',
           where: `Click the "DON'T PASS BAR" area just above the Pass Line to bet ${fc(min)}.`,
           betType: 'dontPass',
           detail: [
@@ -145,7 +147,6 @@ export function useAdvisor() {
           houseEdge: 0.01364
         })
       } else {
-        const betName = hasPass ? 'Pass Line' : "Don't Pass"
         recs.push({
           action: 'Ready to roll!',
           where: 'Click the green "Roll Dice" button below the table.',
@@ -199,7 +200,7 @@ export function useAdvisor() {
 
       if (hasDontPass && !hasDontPassOdds && dontPassBet) {
         recs.push({
-          action: "Lay Odds behind your Don't Pass bet",
+          action: 'Lay Odds behind your Don\'t Pass bet',
           where: `Click the "LAY ODDS" area near your Don't Pass chip, or click the "Lay Odds" button in the control bar.`,
           betType: 'dontPassOdds',
           detail: [
@@ -372,7 +373,7 @@ export function useAdvisor() {
         available.push({ name: 'Pass Line', type: 'pass', where: 'Bottom of table — "PASS LINE"', edge: 1.41, pays: '1:1 (even money)', note: 'Best starting bet. Bet with the shooter.', rating: 'best' })
       }
       if (!hasDontPass && !alreadyMentioned.has('dontPass')) {
-        available.push({ name: "Don't Pass", type: 'dontPass', where: '"DON\'T PASS BAR" above Pass Line', edge: 1.36, pays: '1:1 (even money)', note: 'Slightly better math, bet against shooter.', rating: 'best' })
+        available.push({ name: 'Don\'t Pass', type: 'dontPass', where: '"DON\'T PASS BAR" above Pass Line', edge: 1.36, pays: '1:1 (even money)', note: 'Slightly better math, bet against shooter.', rating: 'best' })
       }
       available.push({ name: 'Field', type: 'field', where: '"FIELD" area in the middle', edge: store.tableRules.fieldTwelvePayout === 3 ? 2.78 : 5.56, pays: '1:1 (2:1 on 2, 3:1 on 12)', note: 'One-roll bet. Wins on 2/3/4/9/10/11/12, loses on 5/6/7/8.', rating: 'ok' })
     }
@@ -385,7 +386,7 @@ export function useAdvisor() {
         available.push({ name: 'Come', type: 'come', where: '"COME" area in center of table', edge: 1.41, pays: '1:1', note: 'Works like a new Pass Line bet. Establish your own point.', rating: 'best' })
       }
       if (!heroBets.some(b => b.type === 'dontCome')) {
-        available.push({ name: "Don't Come", type: 'dontCome', where: '"DON\'T COME BAR" above Come', edge: 1.36, pays: '1:1', note: 'Like a new Don\'t Pass. Bet against the next number.', rating: 'best' })
+        available.push({ name: 'Don\'t Come', type: 'dontCome', where: '"DON\'T COME BAR" above Come', edge: 1.36, pays: '1:1', note: 'Like a new Don\'t Pass. Bet against the next number.', rating: 'best' })
       }
       // Place bets
       for (const num of [6, 8] as const) {
@@ -446,7 +447,7 @@ export function useAdvisor() {
         betType: null,
         detail: [
           'Here is every bet you can place right now, ranked from lowest house edge (best for you) to highest (worst):',
-          ...available.map(bet => {
+          ...available.map((bet) => {
             const icon = bet.rating === 'best' ? '★' : bet.rating === 'good' ? '✓' : bet.rating === 'ok' ? '○' : bet.rating === 'bad' ? '⚠' : '✗'
             return `${icon} ${bet.name} — ${bet.edge}% edge, pays ${bet.pays}. ${bet.note} → ${bet.where}`
           })

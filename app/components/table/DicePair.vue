@@ -60,7 +60,10 @@ const pips: Record<number, boolean[]> = {
           :key="i"
           class="pip-cell"
         >
-          <span v-if="show" class="pip" />
+          <span
+            v-if="show"
+            class="pip"
+          />
         </span>
       </div>
 
@@ -75,7 +78,10 @@ const pips: Record<number, boolean[]> = {
           :key="i"
           class="pip-cell"
         >
-          <span v-if="show" class="pip" />
+          <span
+            v-if="show"
+            class="pip"
+          />
         </span>
       </div>
     </div>

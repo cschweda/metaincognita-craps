@@ -8,6 +8,8 @@ onMounted(() => {
 
 <template>
   <div class="flex-1 bg-neutral-950 flex items-center justify-center">
-    <p class="text-neutral-500">Redirecting...</p>
+    <p class="text-neutral-500">
+      Redirecting...
+    </p>
   </div>
 </template>

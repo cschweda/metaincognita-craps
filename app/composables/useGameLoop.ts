@@ -5,7 +5,6 @@ import {
   isBuyBet,
   isLayBet,
   isHardwayBet,
-  isOddsBet,
   POINT_NUMBERS
 } from '~/utils/betTypes'
 import { crapsConfig } from '~~/craps.config'
@@ -50,7 +49,6 @@ export function useGameLoop() {
   const { roll: rollDice } = useDice()
   const {
     applyRatio,
-    calculateVig,
     calculatePayout,
     calculateFieldPayout,
     calculateCEPayout,
@@ -93,7 +91,6 @@ export function useGameLoop() {
     point: number | null
   ): BetResolution[] {
     const resolutions: BetResolution[] = []
-    const { total, isHard } = roll
 
     // Sort bets by resolution order
     const sorted = [...activeBets]
@@ -118,7 +115,7 @@ export function useGameLoop() {
     point: number | null
   ): BetResolution | null {
     const { total, isHard } = roll
-    const { type, amount, owner } = bet
+    const { type, amount } = bet
 
     // Check if bet is working
     if (!isBetWorking(bet, phase)) {
@@ -158,7 +155,7 @@ export function useGameLoop() {
           return makeResolution(bet, 'win', payout, `Don't Pass wins on ${total}`)
         }
         if (total === 12) {
-          return makeResolution(bet, 'push', 0, "Don't Pass pushes on 12 (bar)")
+          return makeResolution(bet, 'push', 0, 'Don\'t Pass pushes on 12 (bar)')
         }
         if (total === 7 || total === 11) {
           return makeResolution(bet, 'lose', 0, `Don't Pass loses on ${total}`)
@@ -168,7 +165,7 @@ export function useGameLoop() {
       if (phase === 'POINT_PHASE') {
         if (total === 7) {
           const payout = calculatePayout(bet, tableRules)
-          return makeResolution(bet, 'win', payout, "Don't Pass wins - seven out")
+          return makeResolution(bet, 'win', payout, 'Don\'t Pass wins - seven out')
         }
         if (total === point) {
           return makeResolution(bet, 'lose', 0, `Don't Pass loses - point ${point} made`)
@@ -196,7 +193,7 @@ export function useGameLoop() {
       if (phase === 'POINT_PHASE') {
         if (total === 7) {
           const payout = calculatePayout(bet, tableRules)
-          return makeResolution(bet, 'win', payout, "Don't Pass Odds wins - seven out")
+          return makeResolution(bet, 'win', payout, 'Don\'t Pass Odds wins - seven out')
         }
         if (total === point) {
           return makeResolution(bet, 'lose', 0, `Don't Pass Odds loses - point ${point} made`)
@@ -237,7 +234,7 @@ export function useGameLoop() {
         return makeResolution(bet, 'win', payout, `Don't Come wins on ${total}`)
       }
       if (total === 12) {
-        return makeResolution(bet, 'push', 0, "Don't Come pushes on 12 (bar)")
+        return makeResolution(bet, 'push', 0, 'Don\'t Come pushes on 12 (bar)')
       }
       if (total === 7 || total === 11) {
         return makeResolution(bet, 'lose', 0, `Don't Come loses on ${total}`)
@@ -249,7 +246,7 @@ export function useGameLoop() {
     if (type === 'dontCome' && bet.pointNumber !== null) {
       if (total === 7) {
         const payout = calculatePayout(bet, tableRules)
-        return makeResolution(bet, 'win', payout, "Don't Come wins - seven out")
+        return makeResolution(bet, 'win', payout, 'Don\'t Come wins - seven out')
       }
       if (total === bet.pointNumber) {
         return makeResolution(bet, 'lose', 0, `Don't Come loses - ${bet.pointNumber} hit`)
@@ -276,7 +273,7 @@ export function useGameLoop() {
       if (bet.pointNumber !== null) {
         if (total === 7) {
           const payout = calculatePayout(bet, tableRules)
-          return makeResolution(bet, 'win', payout, "Don't Come Odds wins - seven out")
+          return makeResolution(bet, 'win', payout, 'Don\'t Come Odds wins - seven out')
         }
         if (total === bet.pointNumber) {
           return makeResolution(bet, 'lose', 0, `Don't Come Odds loses - ${bet.pointNumber} hit`)
@@ -508,7 +505,7 @@ export function useGameLoop() {
     phase: GamePhase,
     roll: DiceRoll,
     point: number | null
-  ): { newPhase: GamePhase; newPoint: number | null } {
+  ): { newPhase: GamePhase, newPoint: number | null } {
     const { total } = roll
 
     if (phase === 'COME_OUT') {
@@ -567,7 +564,7 @@ export function useGameLoop() {
     roll: DiceRoll,
     phase: GamePhase,
     point: number | null
-  ): { message: string; type: '' | 'natural' | 'craps' | 'point' | 'winner' | 'sevenout' | 'neutral' } {
+  ): { message: string, type: '' | 'natural' | 'craps' | 'point' | 'winner' | 'sevenout' | 'neutral' } {
     const { die1, die2, total, isHard } = roll
 
     // Seven-out during point phase
@@ -625,7 +622,7 @@ export function useGameLoop() {
     resolutions: BetResolution[]
     newPhase: GamePhase
     newPoint: number | null
-    stickmanCall: { message: string; type: '' | 'natural' | 'craps' | 'point' | 'winner' | 'sevenout' | 'neutral' }
+    stickmanCall: { message: string, type: '' | 'natural' | 'craps' | 'point' | 'winner' | 'sevenout' | 'neutral' }
   } {
     const currentPhase = store.phase as GamePhase
     const currentPoint = store.point
@@ -669,8 +666,7 @@ export function useGameLoop() {
 
     // 6. Return orphaned OFF odds whose parent bet was just resolved
     // (e.g., Come Odds OFF on come-out when 7 rolls and parent Come loses)
-    const resolvedBetIds = new Set(actionableResolutions.map(r => r.betId))
-    const orphanedOdds = store.activeBets.filter(b => {
+    const orphanedOdds = store.activeBets.filter((b) => {
       if (b.status === 'resolved') return false
       if (b.type === 'comeOdds' || b.type === 'dontComeOdds') {
         // Check if parent come/dontCome with same pointNumber was just resolved

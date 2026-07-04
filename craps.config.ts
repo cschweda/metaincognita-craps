@@ -92,7 +92,7 @@ export const crapsConfig = {
 
   botStrategies: [
     { name: 'Conservative Carl', system: 'pass_max_odds' },
-    { name: "Don't Debbie", system: 'dont_pass_lay' },
+    { name: 'Don\'t Debbie', system: 'dont_pass_lay' },
     { name: 'Iron Cross Irene', system: 'iron_cross' },
     { name: 'Martingale Mike', system: 'martingale' },
     { name: 'Regression Rick', system: 'regression' },

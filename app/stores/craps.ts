@@ -69,7 +69,7 @@ export const useCrapsStore = defineStore('craps', {
     canPlaceBets: (state): boolean => ['COME_OUT', 'POINT_PHASE', 'BETWEEN_ROLLS'].includes(state.phase),
     canRoll: (state): boolean => ['COME_OUT', 'POINT_PHASE'].includes(state.phase) && !state.animating,
 
-    activeBetsForOwner: (state) => (owner: string): ActiveBet[] => {
+    activeBetsForOwner: state => (owner: string): ActiveBet[] => {
       return state.activeBets.filter(b => b.owner === owner && b.status !== 'resolved')
     },
 
@@ -91,7 +91,7 @@ export const useCrapsStore = defineStore('craps', {
       bankroll: number
       stakeLevel: number
       tableRules: Partial<TableRules>
-      bots: Array<{ name: string; strategy: string }>
+      bots: Array<{ name: string, strategy: string }>
     }) {
       const stake = crapsConfig.stakes[config.stakeLevel - 1]!
 

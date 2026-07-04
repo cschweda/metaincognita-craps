@@ -19,7 +19,7 @@ const props = withDefaults(defineProps<Props>(), {
   puckPoint: null,
   devReferenceUnderlay: false,
   studyMode: false,
-  gamePhase: 'SETUP',
+  gamePhase: 'SETUP'
 })
 
 const emit = defineEmits<{
@@ -70,7 +70,7 @@ function handleStudyMouseLeave() {
 }
 
 /** Get context-aware study explanation for a zone */
-function getStudyExplanation(zoneId: string): { title: string; body: string; status: string; edge: string } | null {
+function getStudyExplanation(zoneId: string): { title: string, body: string, status: string, edge: string } | null {
   const info = zoneDescriptions[zoneId]
   if (!info) return null
 
@@ -103,16 +103,16 @@ function getStudyExplanation(zoneId: string): { title: string; body: string; sta
 }
 
 /** Tooltip descriptions for each zone */
-const zoneDescriptions: Record<string, { name: string; desc: string; edge: string }> = {
+const zoneDescriptions: Record<string, { name: string, desc: string, edge: string }> = {
   'pass-line': { name: 'Pass Line', desc: 'Bet with the shooter. Wins on 7/11, loses on 2/3/12 (come-out). After point: wins if point rolls before 7.', edge: '1.41%' },
-  'dont-pass': { name: "Don't Pass", desc: 'Bet against the shooter. Wins on 2/3, pushes on 12 (come-out). After point: wins if 7 rolls before point.', edge: '1.36%' },
+  'dont-pass': { name: 'Don\'t Pass', desc: 'Bet against the shooter. Wins on 2/3, pushes on 12 (come-out). After point: wins if 7 rolls before point.', edge: '1.36%' },
   'come': { name: 'Come', desc: 'Like a new Pass Line bet during point phase. Next roll: 7/11 wins, 2/3/12 loses, anything else establishes your Come point.', edge: '1.41%' },
-  'dont-come': { name: "Don't Come", desc: "Like a new Don't Pass during point phase. Next roll: 2/3 wins, 12 pushes, 7/11 loses, anything else establishes point.", edge: '1.36%' },
+  'dont-come': { name: 'Don\'t Come', desc: 'Like a new Don\'t Pass during point phase. Next roll: 2/3 wins, 12 pushes, 7/11 loses, anything else establishes point.', edge: '1.36%' },
   'field': { name: 'Field', desc: 'One-roll bet. Wins on 2,3,4,9,10,11,12. Loses on 5,6,7,8. Bonus payouts on 2 (2:1) and 12 (3:1).', edge: '2.78%' },
   'pass-odds': { name: 'Pass Odds', desc: 'Extra bet behind Pass Line at true odds. ZERO house edge. Only available after point is set. Always max your odds!', edge: '0%' },
-  'dont-pass-odds': { name: "Don't Pass Odds", desc: "Lay odds behind Don't Pass at true odds. Zero house edge.", edge: '0%' },
+  'dont-pass-odds': { name: 'Don\'t Pass Odds', desc: 'Lay odds behind Don\'t Pass at true odds. Zero house edge.', edge: '0%' },
   'come-odds': { name: 'Come Odds', desc: 'Odds behind an established Come bet. Zero house edge.', edge: '0%' },
-  'dont-come-odds': { name: "Don't Come Odds", desc: "Odds behind an established Don't Come bet. Zero house edge.", edge: '0%' },
+  'dont-come-odds': { name: 'Don\'t Come Odds', desc: 'Odds behind an established Don\'t Come bet. Zero house edge.', edge: '0%' },
   'place-4': { name: 'Place 4', desc: 'Bet that 4 rolls before 7. Pays 9:5.', edge: '6.67%' },
   'place-5': { name: 'Place 5', desc: 'Bet that 5 rolls before 7. Pays 7:5.', edge: '4.00%' },
   'place-six': { name: 'Place 6', desc: 'Bet that 6 rolls before 7. Pays 7:6. One of the best Place bets.', edge: '1.52%' },
@@ -135,7 +135,7 @@ const zoneDescriptions: Record<string, { name: string; desc: string; edge: strin
   'horn': { name: 'Horn', desc: '4-unit one-roll bet: $1 each on 2, 3, 11, 12. Wins 30:1 or 15:1 minus 3 losing units.', edge: '12.50%' },
   'horn-high': { name: 'Horn High', desc: '5-unit bet: 4 units as Horn + 1 extra on a chosen number.', edge: '12.50%' },
   'hop-easy': { name: 'Hop (Easy)', desc: 'One-roll bet on a specific non-pair combo. Pays 15:1.', edge: '11.11%' },
-  'hop-hard': { name: 'Hop (Hard)', desc: 'One-roll bet on a specific pair combo. Pays 30:1.', edge: '13.89%' },
+  'hop-hard': { name: 'Hop (Hard)', desc: 'One-roll bet on a specific pair combo. Pays 30:1.', edge: '13.89%' }
 }
 
 /** Get bets placed on a specific zone */
@@ -164,7 +164,7 @@ const puckPositions: Record<number, number> = {
   6: 355,
   8: 455,
   9: 555,
-  10: 655,
+  10: 655
 }
 
 const puckX = computed(() => {
@@ -185,661 +185,1485 @@ const puckY = computed(() => {
 
 <template>
   <div class="relative">
-  <svg
-    viewBox="-20 -20 1240 640"
-    xmlns="http://www.w3.org/2000/svg"
-    class="craps-table w-full h-auto select-none"
-    :class="{ 'study-mode': studyMode }"
-    :aria-label="'Craps table'"
-    @mousemove="handleStudyMouseMove"
-    @mouseleave="handleStudyMouseLeave"
-  >
-    <defs>
-      <!-- Slight transparency fill for zone interactivity -->
-      <linearGradient id="felt-sheen" x1="0" y1="0" x2="0" y2="1">
-        <stop offset="0%" stop-color="rgba(255,255,255,0.04)" />
-        <stop offset="100%" stop-color="rgba(0,0,0,0.06)" />
-      </linearGradient>
-    </defs>
-
-    <!-- Dev reference underlay -->
-    <image
-      v-if="devReferenceUnderlay"
-      href="~/assets/reference/Craps_table_layout.svg"
-      x="0"
-      y="0"
-      width="1200"
-      height="600"
-      opacity="0.3"
-      preserveAspectRatio="xMidYMid meet"
-    />
-
-    <!-- ==================== FELT BACKGROUND ==================== -->
-    <rect
-      x="0" y="0"
-      width="1200" height="600"
-      fill="#006633"
-      rx="30" ry="30"
-    />
-    <!-- Table border -->
-    <rect
-      x="4" y="4"
-      width="1192" height="592"
-      fill="none"
-      stroke="#8B6914"
-      stroke-width="6"
-      rx="28" ry="28"
-    />
-    <!-- Inner rail -->
-    <rect
-      x="14" y="14"
-      width="1172" height="572"
-      fill="none"
-      stroke="#8B6914"
-      stroke-width="2"
-      rx="22" ry="22"
-    />
-    <!-- Felt sheen overlay -->
-    <rect
-      x="14" y="14"
-      width="1172" height="572"
-      fill="url(#felt-sheen)"
-      rx="22" ry="22"
-    />
-
-    <!-- ==================== NUMBER BOXES (top row) ==================== -->
-    <g id="number-boxes">
-      <!-- Place 4 -->
-      <g
-        id="place-4"
-        class="zone"
-        :class="{ disabled: isDisabled('place-4') }"
-        @click="handleZoneClick('place-4')"
-      >
-        <rect x="105" y="30" width="100" height="80" rx="3" class="zone-fill" />
-        <text x="155" y="58" class="label-number">4</text>
-        <text x="155" y="98" class="label-payout">9 to 5</text>
-      </g>
-
-
-      <!-- Place 5 -->
-      <g
-        id="place-5"
-        class="zone"
-        :class="{ disabled: isDisabled('place-5') }"
-        @click="handleZoneClick('place-5')"
-      >
-        <rect x="205" y="30" width="100" height="80" rx="3" class="zone-fill" />
-        <text x="255" y="58" class="label-number">5</text>
-        <text x="255" y="98" class="label-payout">7 to 5</text>
-      </g>
-
-      <!-- Place SIX -->
-      <g
-        id="place-six"
-        class="zone"
-        :class="{ disabled: isDisabled('place-six') }"
-        @click="handleZoneClick('place-six')"
-      >
-        <rect x="305" y="30" width="100" height="80" rx="3" class="zone-fill" />
-        <text x="355" y="58" class="label-number">SIX</text>
-        <text x="355" y="98" class="label-payout">7 to 6</text>
-      </g>
-
-      <!-- Place 8 -->
-      <g
-        id="place-8"
-        class="zone"
-        :class="{ disabled: isDisabled('place-8') }"
-        @click="handleZoneClick('place-8')"
-      >
-        <rect x="405" y="30" width="100" height="80" rx="3" class="zone-fill" />
-        <text x="455" y="58" class="label-number">8</text>
-        <text x="455" y="98" class="label-payout">7 to 6</text>
-      </g>
-
-      <!-- Place NINE -->
-      <g
-        id="place-nine"
-        class="zone"
-        :class="{ disabled: isDisabled('place-nine') }"
-        @click="handleZoneClick('place-nine')"
-      >
-        <rect x="505" y="30" width="100" height="80" rx="3" class="zone-fill" />
-        <text x="555" y="58" class="label-number">NINE</text>
-        <text x="555" y="98" class="label-payout">7 to 5</text>
-      </g>
-
-      <!-- Place 10 -->
-      <g
-        id="place-10"
-        class="zone"
-        :class="{ disabled: isDisabled('place-10') }"
-        @click="handleZoneClick('place-10')"
-      >
-        <rect x="605" y="30" width="100" height="80" rx="3" class="zone-fill" />
-        <text x="655" y="58" class="label-number">10</text>
-        <text x="655" y="98" class="label-payout">9 to 5</text>
-      </g>
-    </g>
-
-    <!-- ==================== BIG 6 / BIG 8 ==================== -->
-    <g id="big-bets">
-      <g
-        id="big-6"
-        class="zone"
-        :class="{ disabled: isDisabled('big-6') }"
-        @click="handleZoneClick('big-6')"
-      >
-        <rect x="30" y="30" width="75" height="40" rx="3" class="zone-fill" />
-        <text x="67" y="56" class="label-big">BIG 6</text>
-      </g>
-      <g
-        id="big-8"
-        class="zone"
-        :class="{ disabled: isDisabled('big-8') }"
-        @click="handleZoneClick('big-8')"
-      >
-        <rect x="30" y="70" width="75" height="40" rx="3" class="zone-fill" />
-        <text x="67" y="96" class="label-big">BIG 8</text>
-      </g>
-    </g>
-
-    <!-- ==================== DON'T COME BAR ==================== -->
-    <g
-      id="dont-come"
-      class="zone"
-      :class="{ disabled: isDisabled('dont-come') }"
-      @click="handleZoneClick('dont-come')"
+    <svg
+      viewBox="-20 -20 1240 640"
+      xmlns="http://www.w3.org/2000/svg"
+      class="craps-table w-full h-auto select-none"
+      :class="{ 'study-mode': studyMode }"
+      :aria-label="'Craps table'"
+      @mousemove="handleStudyMouseMove"
+      @mouseleave="handleStudyMouseLeave"
     >
-      <rect x="105" y="115" width="600" height="35" rx="3" class="zone-fill" />
-      <text x="405" y="138" class="label-main">DON'T COME BAR</text>
-    </g>
+      <defs>
+        <!-- Slight transparency fill for zone interactivity -->
+        <linearGradient
+          id="felt-sheen"
+          x1="0"
+          y1="0"
+          x2="0"
+          y2="1"
+        >
+          <stop
+            offset="0%"
+            stop-color="rgba(255,255,255,0.04)"
+          />
+          <stop
+            offset="100%"
+            stop-color="rgba(0,0,0,0.06)"
+          />
+        </linearGradient>
+      </defs>
 
-    <!-- ==================== COME ==================== -->
-    <g
-      id="come"
-      class="zone"
-      :class="{ disabled: isDisabled('come') }"
-      @click="handleZoneClick('come')"
-    >
-      <rect x="105" y="155" width="600" height="90" rx="3" class="zone-fill" />
-      <text x="405" y="210" class="label-large">COME</text>
-    </g>
-
-    <!-- ==================== FIELD ==================== -->
-    <g
-      id="field"
-      class="zone"
-      :class="{ disabled: isDisabled('field') }"
-      @click="handleZoneClick('field')"
-    >
-      <rect x="105" y="250" width="600" height="65" rx="3" class="zone-fill" />
-      <text x="135" y="290" class="label-field-title">FIELD</text>
-      <!-- Field numbers -->
-      <text x="230" y="283" class="label-field-bonus">2</text>
-      <text x="275" y="290" class="label-field-num">&bull; 3 &bull; 4 &bull; 9 &bull; 10 &bull; 11 &bull;</text>
-      <text x="530" y="283" class="label-field-bonus">12</text>
-      <!-- Payout callouts -->
-      <text x="230" y="305" class="label-field-pay">pays 2 to 1</text>
-      <text x="530" y="305" class="label-field-pay">pays 3 to 1</text>
-    </g>
-
-    <!-- ==================== DON'T PASS BAR ==================== -->
-    <g
-      id="dont-pass"
-      class="zone"
-      :class="{ disabled: isDisabled('dont-pass') }"
-      @click="handleZoneClick('dont-pass')"
-    >
-      <rect x="105" y="320" width="600" height="35" rx="3" class="zone-fill" />
-      <text x="405" y="343" class="label-main">DON'T PASS BAR</text>
-      <text x="580" y="343" class="label-dp-twelve">&#9323;</text>
-    </g>
-
-    <!-- ==================== PASS LINE (L-shaped) ==================== -->
-    <g
-      id="pass-line"
-      class="zone"
-      :class="{ disabled: isDisabled('pass-line') }"
-      @click="handleZoneClick('pass-line')"
-    >
-      <!-- Bottom horizontal strip -->
-      <path
-        d="M 30,360 L 705,360 L 705,570 L 30,570 Z"
-        rx="3"
-        class="zone-fill"
+      <!-- Dev reference underlay -->
+      <image
+        v-if="devReferenceUnderlay"
+        href="~/assets/reference/Craps_table_layout.svg"
+        x="0"
+        y="0"
+        width="1200"
+        height="600"
+        opacity="0.3"
+        preserveAspectRatio="xMidYMid meet"
       />
-      <!-- Pass line label (centered in bottom area) -->
-      <text x="370" y="490" class="label-pass">PASS LINE</text>
-    </g>
 
-    <!-- ==================== PASS ODDS (behind pass line bet) ==================== -->
-    <g
-      id="pass-odds"
-      class="zone"
-      :class="{ disabled: isDisabled('pass-odds'), 'odds-available': !isDisabled('pass-odds') && zoneBetTotal('pass-odds') === 0 }"
-      @click="handleZoneClick('pass-odds')"
-    >
-      <rect x="200" y="370" width="340" height="55" rx="5" class="zone-fill-odds-area" />
-      <text
-        v-if="zoneBetTotal('pass-odds') === 0 && !isDisabled('pass-odds')"
-        x="370" y="402"
-        class="label-odds-hint"
-      >ODDS — click to place (0% edge!)</text>
-    </g>
+      <!-- ==================== FELT BACKGROUND ==================== -->
+      <rect
+        x="0"
+        y="0"
+        width="1200"
+        height="600"
+        fill="#006633"
+        rx="30"
+        ry="30"
+      />
+      <!-- Table border -->
+      <rect
+        x="4"
+        y="4"
+        width="1192"
+        height="592"
+        fill="none"
+        stroke="#8B6914"
+        stroke-width="6"
+        rx="28"
+        ry="28"
+      />
+      <!-- Inner rail -->
+      <rect
+        x="14"
+        y="14"
+        width="1172"
+        height="572"
+        fill="none"
+        stroke="#8B6914"
+        stroke-width="2"
+        rx="22"
+        ry="22"
+      />
+      <!-- Felt sheen overlay -->
+      <rect
+        x="14"
+        y="14"
+        width="1172"
+        height="572"
+        fill="url(#felt-sheen)"
+        rx="22"
+        ry="22"
+      />
 
-    <!-- ==================== DON'T PASS ODDS ==================== -->
-    <g
-      id="dont-pass-odds"
-      class="zone"
-      :class="{ disabled: isDisabled('dont-pass-odds'), 'odds-available': !isDisabled('dont-pass-odds') && zoneBetTotal('dont-pass-odds') === 0 }"
-      @click="handleZoneClick('dont-pass-odds')"
-    >
-      <rect x="200" y="320" width="200" height="35" rx="3" class="zone-fill-odds-area" />
-      <text
-        v-if="zoneBetTotal('dont-pass-odds') === 0 && !isDisabled('dont-pass-odds')"
-        x="300" y="342"
-        class="label-odds-hint-sm"
-      >LAY ODDS (0% edge)</text>
-    </g>
+      <!-- ==================== NUMBER BOXES (top row) ==================== -->
+      <g id="number-boxes">
+        <!-- Place 4 -->
+        <g
+          id="place-4"
+          class="zone"
+          :class="{ disabled: isDisabled('place-4') }"
+          @click="handleZoneClick('place-4')"
+        >
+          <rect
+            x="105"
+            y="30"
+            width="100"
+            height="80"
+            rx="3"
+            class="zone-fill"
+          />
+          <text
+            x="155"
+            y="58"
+            class="label-number"
+          >4</text>
+          <text
+            x="155"
+            y="98"
+            class="label-payout"
+          >9 to 5</text>
+        </g>
 
-    <!-- ==================== COME ODDS (placed on number boxes when Come point is set) ==================== -->
-    <g
-      id="come-odds"
-      class="zone"
-      :class="{ disabled: isDisabled('come-odds') }"
-      @click="handleZoneClick('come-odds')"
-    >
+        <!-- Place 5 -->
+        <g
+          id="place-5"
+          class="zone"
+          :class="{ disabled: isDisabled('place-5') }"
+          @click="handleZoneClick('place-5')"
+        >
+          <rect
+            x="205"
+            y="30"
+            width="100"
+            height="80"
+            rx="3"
+            class="zone-fill"
+          />
+          <text
+            x="255"
+            y="58"
+            class="label-number"
+          >5</text>
+          <text
+            x="255"
+            y="98"
+            class="label-payout"
+          >7 to 5</text>
+        </g>
+
+        <!-- Place SIX -->
+        <g
+          id="place-six"
+          class="zone"
+          :class="{ disabled: isDisabled('place-six') }"
+          @click="handleZoneClick('place-six')"
+        >
+          <rect
+            x="305"
+            y="30"
+            width="100"
+            height="80"
+            rx="3"
+            class="zone-fill"
+          />
+          <text
+            x="355"
+            y="58"
+            class="label-number"
+          >SIX</text>
+          <text
+            x="355"
+            y="98"
+            class="label-payout"
+          >7 to 6</text>
+        </g>
+
+        <!-- Place 8 -->
+        <g
+          id="place-8"
+          class="zone"
+          :class="{ disabled: isDisabled('place-8') }"
+          @click="handleZoneClick('place-8')"
+        >
+          <rect
+            x="405"
+            y="30"
+            width="100"
+            height="80"
+            rx="3"
+            class="zone-fill"
+          />
+          <text
+            x="455"
+            y="58"
+            class="label-number"
+          >8</text>
+          <text
+            x="455"
+            y="98"
+            class="label-payout"
+          >7 to 6</text>
+        </g>
+
+        <!-- Place NINE -->
+        <g
+          id="place-nine"
+          class="zone"
+          :class="{ disabled: isDisabled('place-nine') }"
+          @click="handleZoneClick('place-nine')"
+        >
+          <rect
+            x="505"
+            y="30"
+            width="100"
+            height="80"
+            rx="3"
+            class="zone-fill"
+          />
+          <text
+            x="555"
+            y="58"
+            class="label-number"
+          >NINE</text>
+          <text
+            x="555"
+            y="98"
+            class="label-payout"
+          >7 to 5</text>
+        </g>
+
+        <!-- Place 10 -->
+        <g
+          id="place-10"
+          class="zone"
+          :class="{ disabled: isDisabled('place-10') }"
+          @click="handleZoneClick('place-10')"
+        >
+          <rect
+            x="605"
+            y="30"
+            width="100"
+            height="80"
+            rx="3"
+            class="zone-fill"
+          />
+          <text
+            x="655"
+            y="58"
+            class="label-number"
+          >10</text>
+          <text
+            x="655"
+            y="98"
+            class="label-payout"
+          >9 to 5</text>
+        </g>
+      </g>
+
+      <!-- ==================== BIG 6 / BIG 8 ==================== -->
+      <g id="big-bets">
+        <g
+          id="big-6"
+          class="zone"
+          :class="{ disabled: isDisabled('big-6') }"
+          @click="handleZoneClick('big-6')"
+        >
+          <rect
+            x="30"
+            y="30"
+            width="75"
+            height="40"
+            rx="3"
+            class="zone-fill"
+          />
+          <text
+            x="67"
+            y="56"
+            class="label-big"
+          >BIG 6</text>
+        </g>
+        <g
+          id="big-8"
+          class="zone"
+          :class="{ disabled: isDisabled('big-8') }"
+          @click="handleZoneClick('big-8')"
+        >
+          <rect
+            x="30"
+            y="70"
+            width="75"
+            height="40"
+            rx="3"
+            class="zone-fill"
+          />
+          <text
+            x="67"
+            y="96"
+            class="label-big"
+          >BIG 8</text>
+        </g>
+      </g>
+
+      <!-- ==================== DON'T COME BAR ==================== -->
+      <g
+        id="dont-come"
+        class="zone"
+        :class="{ disabled: isDisabled('dont-come') }"
+        @click="handleZoneClick('dont-come')"
+      >
+        <rect
+          x="105"
+          y="115"
+          width="600"
+          height="35"
+          rx="3"
+          class="zone-fill"
+        />
+        <text
+          x="405"
+          y="138"
+          class="label-main"
+        >DON'T COME BAR</text>
+      </g>
+
+      <!-- ==================== COME ==================== -->
+      <g
+        id="come"
+        class="zone"
+        :class="{ disabled: isDisabled('come') }"
+        @click="handleZoneClick('come')"
+      >
+        <rect
+          x="105"
+          y="155"
+          width="600"
+          height="90"
+          rx="3"
+          class="zone-fill"
+        />
+        <text
+          x="405"
+          y="210"
+          class="label-large"
+        >COME</text>
+      </g>
+
+      <!-- ==================== FIELD ==================== -->
+      <g
+        id="field"
+        class="zone"
+        :class="{ disabled: isDisabled('field') }"
+        @click="handleZoneClick('field')"
+      >
+        <rect
+          x="105"
+          y="250"
+          width="600"
+          height="65"
+          rx="3"
+          class="zone-fill"
+        />
+        <text
+          x="135"
+          y="290"
+          class="label-field-title"
+        >FIELD</text>
+        <!-- Field numbers -->
+        <text
+          x="230"
+          y="283"
+          class="label-field-bonus"
+        >2</text>
+        <text
+          x="275"
+          y="290"
+          class="label-field-num"
+        >&bull; 3 &bull; 4 &bull; 9 &bull; 10 &bull; 11 &bull;</text>
+        <text
+          x="530"
+          y="283"
+          class="label-field-bonus"
+        >12</text>
+        <!-- Payout callouts -->
+        <text
+          x="230"
+          y="305"
+          class="label-field-pay"
+        >pays 2 to 1</text>
+        <text
+          x="530"
+          y="305"
+          class="label-field-pay"
+        >pays 3 to 1</text>
+      </g>
+
+      <!-- ==================== DON'T PASS BAR ==================== -->
+      <g
+        id="dont-pass"
+        class="zone"
+        :class="{ disabled: isDisabled('dont-pass') }"
+        @click="handleZoneClick('dont-pass')"
+      >
+        <rect
+          x="105"
+          y="320"
+          width="600"
+          height="35"
+          rx="3"
+          class="zone-fill"
+        />
+        <text
+          x="405"
+          y="343"
+          class="label-main"
+        >DON'T PASS BAR</text>
+        <text
+          x="580"
+          y="343"
+          class="label-dp-twelve"
+        >&#9323;</text>
+      </g>
+
+      <!-- ==================== PASS LINE (L-shaped) ==================== -->
+      <g
+        id="pass-line"
+        class="zone"
+        :class="{ disabled: isDisabled('pass-line') }"
+        @click="handleZoneClick('pass-line')"
+      >
+        <!-- Bottom horizontal strip -->
+        <path
+          d="M 30,360 L 705,360 L 705,570 L 30,570 Z"
+          rx="3"
+          class="zone-fill"
+        />
+        <!-- Pass line label (centered in bottom area) -->
+        <text
+          x="370"
+          y="490"
+          class="label-pass"
+        >PASS LINE</text>
+      </g>
+
+      <!-- ==================== PASS ODDS (behind pass line bet) ==================== -->
+      <g
+        id="pass-odds"
+        class="zone"
+        :class="{ 'disabled': isDisabled('pass-odds'), 'odds-available': !isDisabled('pass-odds') && zoneBetTotal('pass-odds') === 0 }"
+        @click="handleZoneClick('pass-odds')"
+      >
+        <rect
+          x="200"
+          y="370"
+          width="340"
+          height="55"
+          rx="5"
+          class="zone-fill-odds-area"
+        />
+        <text
+          v-if="zoneBetTotal('pass-odds') === 0 && !isDisabled('pass-odds')"
+          x="370"
+          y="402"
+          class="label-odds-hint"
+        >ODDS — click to place (0% edge!)</text>
+      </g>
+
+      <!-- ==================== DON'T PASS ODDS ==================== -->
+      <g
+        id="dont-pass-odds"
+        class="zone"
+        :class="{ 'disabled': isDisabled('dont-pass-odds'), 'odds-available': !isDisabled('dont-pass-odds') && zoneBetTotal('dont-pass-odds') === 0 }"
+        @click="handleZoneClick('dont-pass-odds')"
+      >
+        <rect
+          x="200"
+          y="320"
+          width="200"
+          height="35"
+          rx="3"
+          class="zone-fill-odds-area"
+        />
+        <text
+          v-if="zoneBetTotal('dont-pass-odds') === 0 && !isDisabled('dont-pass-odds')"
+          x="300"
+          y="342"
+          class="label-odds-hint-sm"
+        >LAY ODDS (0% edge)</text>
+      </g>
+
+      <!-- ==================== COME ODDS (placed on number boxes when Come point is set) ==================== -->
+      <g
+        id="come-odds"
+        class="zone"
+        :class="{ disabled: isDisabled('come-odds') }"
+        @click="handleZoneClick('come-odds')"
+      >
       <!-- Come odds appear as a small zone above each number box where a come bet is established -->
-    </g>
-
-    <!-- ==================== DON'T COME ODDS ==================== -->
-    <g
-      id="dont-come-odds"
-      class="zone"
-      :class="{ disabled: isDisabled('dont-come-odds') }"
-      @click="handleZoneClick('dont-come-odds')"
-    >
-    </g>
-
-    <!-- ==================== CENTER PROPOSITION BETS ==================== -->
-    <g id="center-props" transform="translate(730, 30)">
-      <!-- Background panel -->
-      <rect x="0" y="0" width="440" height="540" rx="8" fill="rgba(0,40,20,0.5)" stroke="#8B6914" stroke-width="1.5" />
-
-      <text x="220" y="28" class="label-section-title">PROPOSITION BETS</text>
-
-      <!-- Hardways row -->
-      <g id="hardways" transform="translate(0, 40)">
-        <!-- Hard 4 -->
-        <g
-          id="hard-4"
-          class="zone"
-          :class="{ disabled: isDisabled('hard-4') }"
-          @click="handleZoneClick('hard-4')"
-        >
-          <rect x="10" y="0" width="100" height="55" rx="3" class="zone-fill-prop" />
-          <text x="60" y="20" class="label-prop">HARD 4</text>
-          <text x="60" y="42" class="label-prop-payout">7 to 1</text>
-        </g>
-
-        <!-- Hard 6 -->
-        <g
-          id="hard-6"
-          class="zone"
-          :class="{ disabled: isDisabled('hard-6') }"
-          @click="handleZoneClick('hard-6')"
-        >
-          <rect x="115" y="0" width="100" height="55" rx="3" class="zone-fill-prop" />
-          <text x="165" y="20" class="label-prop">HARD 6</text>
-          <text x="165" y="42" class="label-prop-payout">9 to 1</text>
-        </g>
-
-        <!-- Hard 8 -->
-        <g
-          id="hard-8"
-          class="zone"
-          :class="{ disabled: isDisabled('hard-8') }"
-          @click="handleZoneClick('hard-8')"
-        >
-          <rect x="220" y="0" width="100" height="55" rx="3" class="zone-fill-prop" />
-          <text x="270" y="20" class="label-prop">HARD 8</text>
-          <text x="270" y="42" class="label-prop-payout">9 to 1</text>
-        </g>
-
-        <!-- Hard 10 -->
-        <g
-          id="hard-10"
-          class="zone"
-          :class="{ disabled: isDisabled('hard-10') }"
-          @click="handleZoneClick('hard-10')"
-        >
-          <rect x="325" y="0" width="100" height="55" rx="3" class="zone-fill-prop" />
-          <text x="375" y="20" class="label-prop">HARD 10</text>
-          <text x="375" y="42" class="label-prop-payout">7 to 1</text>
-        </g>
       </g>
 
-      <!-- Any Seven -->
+      <!-- ==================== DON'T COME ODDS ==================== -->
       <g
-        id="any-seven"
+        id="dont-come-odds"
         class="zone"
-        :class="{ disabled: isDisabled('any-seven') }"
-        @click="handleZoneClick('any-seven')"
-      >
-        <rect x="10" y="105" width="420" height="50" rx="3" class="zone-fill-prop" />
-        <text x="220" y="128" class="label-prop-large">ANY SEVEN</text>
-        <text x="220" y="148" class="label-prop-payout">4 to 1</text>
-      </g>
+        :class="{ disabled: isDisabled('dont-come-odds') }"
+        @click="handleZoneClick('dont-come-odds')"
+      />
 
-      <!-- Any Craps -->
+      <!-- ==================== CENTER PROPOSITION BETS ==================== -->
       <g
-        id="any-craps"
-        class="zone"
-        :class="{ disabled: isDisabled('any-craps') }"
-        @click="handleZoneClick('any-craps')"
+        id="center-props"
+        transform="translate(730, 30)"
       >
-        <rect x="10" y="165" width="420" height="50" rx="3" class="zone-fill-prop" />
-        <text x="220" y="188" class="label-prop-large">ANY CRAPS</text>
-        <text x="220" y="208" class="label-prop-payout">7 to 1</text>
-      </g>
+        <!-- Background panel -->
+        <rect
+          x="0"
+          y="0"
+          width="440"
+          height="540"
+          rx="8"
+          fill="rgba(0,40,20,0.5)"
+          stroke="#8B6914"
+          stroke-width="1.5"
+        />
 
-      <!-- Single-roll number bets -->
-      <g id="single-roll-numbers" transform="translate(0, 230)">
-        <!-- Aces / Snake Eyes (2) -->
+        <text
+          x="220"
+          y="28"
+          class="label-section-title"
+        >PROPOSITION BETS</text>
+
+        <!-- Hardways row -->
         <g
-          id="aces"
-          class="zone"
-          :class="{ disabled: isDisabled('aces') }"
-          @click="handleZoneClick('aces')"
+          id="hardways"
+          transform="translate(0, 40)"
         >
-          <rect x="10" y="0" width="100" height="60" rx="3" class="zone-fill-prop" />
-          <text x="60" y="20" class="label-prop">ACES</text>
-          <text x="60" y="36" class="label-prop-sub">(Snake Eyes)</text>
-          <text x="60" y="52" class="label-prop-payout">30 to 1</text>
+          <!-- Hard 4 -->
+          <g
+            id="hard-4"
+            class="zone"
+            :class="{ disabled: isDisabled('hard-4') }"
+            @click="handleZoneClick('hard-4')"
+          >
+            <rect
+              x="10"
+              y="0"
+              width="100"
+              height="55"
+              rx="3"
+              class="zone-fill-prop"
+            />
+            <text
+              x="60"
+              y="20"
+              class="label-prop"
+            >HARD 4</text>
+            <text
+              x="60"
+              y="42"
+              class="label-prop-payout"
+            >7 to 1</text>
+          </g>
+
+          <!-- Hard 6 -->
+          <g
+            id="hard-6"
+            class="zone"
+            :class="{ disabled: isDisabled('hard-6') }"
+            @click="handleZoneClick('hard-6')"
+          >
+            <rect
+              x="115"
+              y="0"
+              width="100"
+              height="55"
+              rx="3"
+              class="zone-fill-prop"
+            />
+            <text
+              x="165"
+              y="20"
+              class="label-prop"
+            >HARD 6</text>
+            <text
+              x="165"
+              y="42"
+              class="label-prop-payout"
+            >9 to 1</text>
+          </g>
+
+          <!-- Hard 8 -->
+          <g
+            id="hard-8"
+            class="zone"
+            :class="{ disabled: isDisabled('hard-8') }"
+            @click="handleZoneClick('hard-8')"
+          >
+            <rect
+              x="220"
+              y="0"
+              width="100"
+              height="55"
+              rx="3"
+              class="zone-fill-prop"
+            />
+            <text
+              x="270"
+              y="20"
+              class="label-prop"
+            >HARD 8</text>
+            <text
+              x="270"
+              y="42"
+              class="label-prop-payout"
+            >9 to 1</text>
+          </g>
+
+          <!-- Hard 10 -->
+          <g
+            id="hard-10"
+            class="zone"
+            :class="{ disabled: isDisabled('hard-10') }"
+            @click="handleZoneClick('hard-10')"
+          >
+            <rect
+              x="325"
+              y="0"
+              width="100"
+              height="55"
+              rx="3"
+              class="zone-fill-prop"
+            />
+            <text
+              x="375"
+              y="20"
+              class="label-prop"
+            >HARD 10</text>
+            <text
+              x="375"
+              y="42"
+              class="label-prop-payout"
+            >7 to 1</text>
+          </g>
         </g>
 
-        <!-- Ace-Deuce (3) -->
+        <!-- Any Seven -->
         <g
-          id="ace-deuce"
+          id="any-seven"
           class="zone"
-          :class="{ disabled: isDisabled('ace-deuce') }"
-          @click="handleZoneClick('ace-deuce')"
+          :class="{ disabled: isDisabled('any-seven') }"
+          @click="handleZoneClick('any-seven')"
         >
-          <rect x="115" y="0" width="100" height="60" rx="3" class="zone-fill-prop" />
-          <text x="165" y="20" class="label-prop">ACE-DEUCE</text>
-          <text x="165" y="36" class="label-prop-sub">(Three)</text>
-          <text x="165" y="52" class="label-prop-payout">15 to 1</text>
+          <rect
+            x="10"
+            y="105"
+            width="420"
+            height="50"
+            rx="3"
+            class="zone-fill-prop"
+          />
+          <text
+            x="220"
+            y="128"
+            class="label-prop-large"
+          >ANY SEVEN</text>
+          <text
+            x="220"
+            y="148"
+            class="label-prop-payout"
+          >4 to 1</text>
         </g>
 
-        <!-- Yo / Eleven (11) -->
+        <!-- Any Craps -->
         <g
-          id="yo-eleven"
+          id="any-craps"
           class="zone"
-          :class="{ disabled: isDisabled('yo-eleven') }"
-          @click="handleZoneClick('yo-eleven')"
+          :class="{ disabled: isDisabled('any-craps') }"
+          @click="handleZoneClick('any-craps')"
         >
-          <rect x="220" y="0" width="100" height="60" rx="3" class="zone-fill-prop" />
-          <text x="270" y="20" class="label-prop">YO</text>
-          <text x="270" y="36" class="label-prop-sub">(Eleven)</text>
-          <text x="270" y="52" class="label-prop-payout">15 to 1</text>
+          <rect
+            x="10"
+            y="165"
+            width="420"
+            height="50"
+            rx="3"
+            class="zone-fill-prop"
+          />
+          <text
+            x="220"
+            y="188"
+            class="label-prop-large"
+          >ANY CRAPS</text>
+          <text
+            x="220"
+            y="208"
+            class="label-prop-payout"
+          >7 to 1</text>
         </g>
 
-        <!-- Boxcars (12) -->
+        <!-- Single-roll number bets -->
         <g
-          id="boxcars"
-          class="zone"
-          :class="{ disabled: isDisabled('boxcars') }"
-          @click="handleZoneClick('boxcars')"
+          id="single-roll-numbers"
+          transform="translate(0, 230)"
         >
-          <rect x="325" y="0" width="100" height="60" rx="3" class="zone-fill-prop" />
-          <text x="375" y="20" class="label-prop">BOXCARS</text>
-          <text x="375" y="36" class="label-prop-sub">(Twelve)</text>
-          <text x="375" y="52" class="label-prop-payout">30 to 1</text>
+          <!-- Aces / Snake Eyes (2) -->
+          <g
+            id="aces"
+            class="zone"
+            :class="{ disabled: isDisabled('aces') }"
+            @click="handleZoneClick('aces')"
+          >
+            <rect
+              x="10"
+              y="0"
+              width="100"
+              height="60"
+              rx="3"
+              class="zone-fill-prop"
+            />
+            <text
+              x="60"
+              y="20"
+              class="label-prop"
+            >ACES</text>
+            <text
+              x="60"
+              y="36"
+              class="label-prop-sub"
+            >(Snake Eyes)</text>
+            <text
+              x="60"
+              y="52"
+              class="label-prop-payout"
+            >30 to 1</text>
+          </g>
+
+          <!-- Ace-Deuce (3) -->
+          <g
+            id="ace-deuce"
+            class="zone"
+            :class="{ disabled: isDisabled('ace-deuce') }"
+            @click="handleZoneClick('ace-deuce')"
+          >
+            <rect
+              x="115"
+              y="0"
+              width="100"
+              height="60"
+              rx="3"
+              class="zone-fill-prop"
+            />
+            <text
+              x="165"
+              y="20"
+              class="label-prop"
+            >ACE-DEUCE</text>
+            <text
+              x="165"
+              y="36"
+              class="label-prop-sub"
+            >(Three)</text>
+            <text
+              x="165"
+              y="52"
+              class="label-prop-payout"
+            >15 to 1</text>
+          </g>
+
+          <!-- Yo / Eleven (11) -->
+          <g
+            id="yo-eleven"
+            class="zone"
+            :class="{ disabled: isDisabled('yo-eleven') }"
+            @click="handleZoneClick('yo-eleven')"
+          >
+            <rect
+              x="220"
+              y="0"
+              width="100"
+              height="60"
+              rx="3"
+              class="zone-fill-prop"
+            />
+            <text
+              x="270"
+              y="20"
+              class="label-prop"
+            >YO</text>
+            <text
+              x="270"
+              y="36"
+              class="label-prop-sub"
+            >(Eleven)</text>
+            <text
+              x="270"
+              y="52"
+              class="label-prop-payout"
+            >15 to 1</text>
+          </g>
+
+          <!-- Boxcars (12) -->
+          <g
+            id="boxcars"
+            class="zone"
+            :class="{ disabled: isDisabled('boxcars') }"
+            @click="handleZoneClick('boxcars')"
+          >
+            <rect
+              x="325"
+              y="0"
+              width="100"
+              height="60"
+              rx="3"
+              class="zone-fill-prop"
+            />
+            <text
+              x="375"
+              y="20"
+              class="label-prop"
+            >BOXCARS</text>
+            <text
+              x="375"
+              y="36"
+              class="label-prop-sub"
+            >(Twelve)</text>
+            <text
+              x="375"
+              y="52"
+              class="label-prop-payout"
+            >30 to 1</text>
+          </g>
         </g>
+
+        <!-- C&E -->
+        <g
+          id="craps-eleven"
+          class="zone"
+          :class="{ disabled: isDisabled('craps-eleven') }"
+          @click="handleZoneClick('craps-eleven')"
+        >
+          <rect
+            x="10"
+            y="300"
+            width="205"
+            height="50"
+            rx="3"
+            class="zone-fill-prop"
+          />
+          <text
+            x="112"
+            y="322"
+            class="label-prop-large"
+          >C &amp; E</text>
+          <text
+            x="112"
+            y="342"
+            class="label-prop-sub"
+          >Craps &amp; Eleven</text>
+        </g>
+
+        <!-- Horn -->
+        <g
+          id="horn"
+          class="zone"
+          :class="{ disabled: isDisabled('horn') }"
+          @click="handleZoneClick('horn')"
+        >
+          <rect
+            x="220"
+            y="300"
+            width="100"
+            height="50"
+            rx="3"
+            class="zone-fill-prop"
+          />
+          <text
+            x="270"
+            y="322"
+            class="label-prop-large"
+          >HORN</text>
+          <text
+            x="270"
+            y="342"
+            class="label-prop-sub"
+          >2-3-11-12</text>
+        </g>
+
+        <!-- Horn High -->
+        <g
+          id="horn-high"
+          class="zone"
+          :class="{ disabled: isDisabled('horn-high') }"
+          @click="handleZoneClick('horn-high')"
+        >
+          <rect
+            x="325"
+            y="300"
+            width="100"
+            height="50"
+            rx="3"
+            class="zone-fill-prop"
+          />
+          <text
+            x="375"
+            y="322"
+            class="label-prop-large"
+          >HORN</text>
+          <text
+            x="375"
+            y="342"
+            class="label-prop-sub"
+          >HIGH</text>
+        </g>
+
+        <!-- Hop bets (small reference zones) -->
+        <g
+          id="hop-easy"
+          class="zone"
+          :class="{ disabled: isDisabled('hop-easy') }"
+          @click="handleZoneClick('hop-easy')"
+        >
+          <rect
+            x="10"
+            y="360"
+            width="205"
+            height="40"
+            rx="3"
+            class="zone-fill-prop"
+          />
+          <text
+            x="112"
+            y="378"
+            class="label-prop-sub"
+          >HOP (Easy)</text>
+          <text
+            x="112"
+            y="394"
+            class="label-prop-payout"
+          >15 to 1</text>
+        </g>
+
+        <g
+          id="hop-hard"
+          class="zone"
+          :class="{ disabled: isDisabled('hop-hard') }"
+          @click="handleZoneClick('hop-hard')"
+        >
+          <rect
+            x="220"
+            y="360"
+            width="205"
+            height="40"
+            rx="3"
+            class="zone-fill-prop"
+          />
+          <text
+            x="322"
+            y="378"
+            class="label-prop-sub"
+          >HOP (Hard)</text>
+          <text
+            x="322"
+            y="394"
+            class="label-prop-payout"
+          >30 to 1</text>
+        </g>
+
+        <!-- Buy/Lay reference labels -->
+        <text
+          x="220"
+          y="430"
+          class="label-section-sub"
+        >BUY / LAY BETS</text>
+        <text
+          x="220"
+          y="448"
+          class="label-prop-sub"
+        >Place bets on number boxes above</text>
+        <text
+          x="220"
+          y="464"
+          class="label-prop-sub"
+        >Buy: 5% commission, true odds</text>
       </g>
 
-      <!-- C&E -->
+      <!-- ==================== BUY ZONES (overlaid on number boxes) ==================== -->
       <g
-        id="craps-eleven"
-        class="zone"
-        :class="{ disabled: isDisabled('craps-eleven') }"
-        @click="handleZoneClick('craps-eleven')"
+        id="buy-zones"
+        opacity="0"
       >
-        <rect x="10" y="300" width="205" height="50" rx="3" class="zone-fill-prop" />
-        <text x="112" y="322" class="label-prop-large">C &amp; E</text>
-        <text x="112" y="342" class="label-prop-sub">Craps &amp; Eleven</text>
+        <g id="buy-4"><rect
+          x="105"
+          y="30"
+          width="50"
+          height="20"
+        /></g>
+        <g id="buy-5"><rect
+          x="205"
+          y="30"
+          width="50"
+          height="20"
+        /></g>
+        <g id="buy-6"><rect
+          x="305"
+          y="30"
+          width="50"
+          height="20"
+        /></g>
+        <g id="buy-8"><rect
+          x="405"
+          y="30"
+          width="50"
+          height="20"
+        /></g>
+        <g id="buy-9"><rect
+          x="505"
+          y="30"
+          width="50"
+          height="20"
+        /></g>
+        <g id="buy-10"><rect
+          x="605"
+          y="30"
+          width="50"
+          height="20"
+        /></g>
       </g>
 
-      <!-- Horn -->
+      <!-- ==================== LAY ZONES (overlaid on number boxes) ==================== -->
       <g
-        id="horn"
-        class="zone"
-        :class="{ disabled: isDisabled('horn') }"
-        @click="handleZoneClick('horn')"
+        id="lay-zones"
+        opacity="0"
       >
-        <rect x="220" y="300" width="100" height="50" rx="3" class="zone-fill-prop" />
-        <text x="270" y="322" class="label-prop-large">HORN</text>
-        <text x="270" y="342" class="label-prop-sub">2-3-11-12</text>
+        <g id="lay-4"><rect
+          x="155"
+          y="30"
+          width="50"
+          height="20"
+        /></g>
+        <g id="lay-5"><rect
+          x="255"
+          y="30"
+          width="50"
+          height="20"
+        /></g>
+        <g id="lay-6"><rect
+          x="355"
+          y="30"
+          width="50"
+          height="20"
+        /></g>
+        <g id="lay-8"><rect
+          x="455"
+          y="30"
+          width="50"
+          height="20"
+        /></g>
+        <g id="lay-9"><rect
+          x="555"
+          y="30"
+          width="50"
+          height="20"
+        /></g>
+        <g id="lay-10"><rect
+          x="655"
+          y="30"
+          width="50"
+          height="20"
+        /></g>
       </g>
 
-      <!-- Horn High -->
+      <!-- ==================== ZONE OUTLINES (drawn on top) ==================== -->
       <g
-        id="horn-high"
-        class="zone"
-        :class="{ disabled: isDisabled('horn-high') }"
-        @click="handleZoneClick('horn-high')"
+        id="zone-borders"
+        fill="none"
+        stroke="rgba(255,255,255,0.6)"
+        stroke-width="1.5"
+        pointer-events="none"
       >
-        <rect x="325" y="300" width="100" height="50" rx="3" class="zone-fill-prop" />
-        <text x="375" y="322" class="label-prop-large">HORN</text>
-        <text x="375" y="342" class="label-prop-sub">HIGH</text>
+        <!-- Number box borders -->
+        <rect
+          x="105"
+          y="30"
+          width="100"
+          height="80"
+          rx="3"
+        />
+        <rect
+          x="205"
+          y="30"
+          width="100"
+          height="80"
+          rx="3"
+        />
+        <rect
+          x="305"
+          y="30"
+          width="100"
+          height="80"
+          rx="3"
+        />
+        <rect
+          x="405"
+          y="30"
+          width="100"
+          height="80"
+          rx="3"
+        />
+        <rect
+          x="505"
+          y="30"
+          width="100"
+          height="80"
+          rx="3"
+        />
+        <rect
+          x="605"
+          y="30"
+          width="100"
+          height="80"
+          rx="3"
+        />
+        <!-- Big 6/8 -->
+        <rect
+          x="30"
+          y="30"
+          width="75"
+          height="40"
+          rx="3"
+        />
+        <rect
+          x="30"
+          y="70"
+          width="75"
+          height="40"
+          rx="3"
+        />
+        <!-- Don't Come -->
+        <rect
+          x="105"
+          y="115"
+          width="600"
+          height="35"
+          rx="3"
+        />
+        <!-- Come -->
+        <rect
+          x="105"
+          y="155"
+          width="600"
+          height="90"
+          rx="3"
+        />
+        <!-- Field -->
+        <rect
+          x="105"
+          y="250"
+          width="600"
+          height="65"
+          rx="3"
+        />
+        <!-- Don't Pass -->
+        <rect
+          x="105"
+          y="320"
+          width="600"
+          height="35"
+          rx="3"
+        />
+        <!-- Pass Line -->
+        <path d="M 30,360 L 705,360 L 705,570 L 30,570 Z" />
+        <!-- Pass Odds area (dashed when available) -->
+        <rect
+          x="200"
+          y="370"
+          width="340"
+          height="55"
+          rx="5"
+          stroke-dasharray="6 4"
+          opacity="0.3"
+        />
       </g>
 
-      <!-- Hop bets (small reference zones) -->
+      <!-- ==================== ACTIVE BET CHIPS ==================== -->
       <g
-        id="hop-easy"
-        class="zone"
-        :class="{ disabled: isDisabled('hop-easy') }"
-        @click="handleZoneClick('hop-easy')"
+        id="bet-chips"
+        pointer-events="none"
       >
-        <rect x="10" y="360" width="205" height="40" rx="3" class="zone-fill-prop" />
-        <text x="112" y="378" class="label-prop-sub">HOP (Easy)</text>
-        <text x="112" y="394" class="label-prop-payout">15 to 1</text>
-      </g>
-
-      <g
-        id="hop-hard"
-        class="zone"
-        :class="{ disabled: isDisabled('hop-hard') }"
-        @click="handleZoneClick('hop-hard')"
-      >
-        <rect x="220" y="360" width="205" height="40" rx="3" class="zone-fill-prop" />
-        <text x="322" y="378" class="label-prop-sub">HOP (Hard)</text>
-        <text x="322" y="394" class="label-prop-payout">30 to 1</text>
-      </g>
-
-      <!-- Buy/Lay reference labels -->
-      <text x="220" y="430" class="label-section-sub">BUY / LAY BETS</text>
-      <text x="220" y="448" class="label-prop-sub">Place bets on number boxes above</text>
-      <text x="220" y="464" class="label-prop-sub">Buy: 5% commission, true odds</text>
-    </g>
-
-    <!-- ==================== BUY ZONES (overlaid on number boxes) ==================== -->
-    <g id="buy-zones" opacity="0">
-      <g id="buy-4"><rect x="105" y="30" width="50" height="20" /></g>
-      <g id="buy-5"><rect x="205" y="30" width="50" height="20" /></g>
-      <g id="buy-6"><rect x="305" y="30" width="50" height="20" /></g>
-      <g id="buy-8"><rect x="405" y="30" width="50" height="20" /></g>
-      <g id="buy-9"><rect x="505" y="30" width="50" height="20" /></g>
-      <g id="buy-10"><rect x="605" y="30" width="50" height="20" /></g>
-    </g>
-
-    <!-- ==================== LAY ZONES (overlaid on number boxes) ==================== -->
-    <g id="lay-zones" opacity="0">
-      <g id="lay-4"><rect x="155" y="30" width="50" height="20" /></g>
-      <g id="lay-5"><rect x="255" y="30" width="50" height="20" /></g>
-      <g id="lay-6"><rect x="355" y="30" width="50" height="20" /></g>
-      <g id="lay-8"><rect x="455" y="30" width="50" height="20" /></g>
-      <g id="lay-9"><rect x="555" y="30" width="50" height="20" /></g>
-      <g id="lay-10"><rect x="655" y="30" width="50" height="20" /></g>
-    </g>
-
-    <!-- ==================== ZONE OUTLINES (drawn on top) ==================== -->
-    <g id="zone-borders" fill="none" stroke="rgba(255,255,255,0.6)" stroke-width="1.5" pointer-events="none">
-      <!-- Number box borders -->
-      <rect x="105" y="30" width="100" height="80" rx="3" />
-      <rect x="205" y="30" width="100" height="80" rx="3" />
-      <rect x="305" y="30" width="100" height="80" rx="3" />
-      <rect x="405" y="30" width="100" height="80" rx="3" />
-      <rect x="505" y="30" width="100" height="80" rx="3" />
-      <rect x="605" y="30" width="100" height="80" rx="3" />
-      <!-- Big 6/8 -->
-      <rect x="30" y="30" width="75" height="40" rx="3" />
-      <rect x="30" y="70" width="75" height="40" rx="3" />
-      <!-- Don't Come -->
-      <rect x="105" y="115" width="600" height="35" rx="3" />
-      <!-- Come -->
-      <rect x="105" y="155" width="600" height="90" rx="3" />
-      <!-- Field -->
-      <rect x="105" y="250" width="600" height="65" rx="3" />
-      <!-- Don't Pass -->
-      <rect x="105" y="320" width="600" height="35" rx="3" />
-      <!-- Pass Line -->
-      <path d="M 30,360 L 705,360 L 705,570 L 30,570 Z" />
-      <!-- Pass Odds area (dashed when available) -->
-      <rect x="200" y="370" width="340" height="55" rx="5" stroke-dasharray="6 4" opacity="0.3" />
-    </g>
-
-    <!-- ==================== ACTIVE BET CHIPS ==================== -->
-    <g id="bet-chips" pointer-events="none">
-      <!-- Pass Line chips -->
-      <g v-if="zoneBetTotal('pass-line') > 0">
-        <circle cx="370" cy="460" r="18" fill="#CC0000" stroke="#fff" stroke-width="2" />
-        <text x="370" y="465" class="chip-text">{{ formatChipAmount(zoneBetTotal('pass-line')) }}</text>
-      </g>
-
-      <!-- Pass Odds chips (behind pass line chip) -->
-      <g v-if="zoneBetTotal('pass-odds') > 0">
-        <circle cx="370" cy="395" r="16" fill="#1a7a1a" stroke="#fff" stroke-width="2" />
-        <text x="370" y="400" class="chip-text-sm">{{ formatChipAmount(zoneBetTotal('pass-odds')) }}</text>
-        <text x="370" y="415" class="label-odds-chip">ODDS</text>
-      </g>
-
-      <!-- Don't Pass Odds chips -->
-      <g v-if="zoneBetTotal('dont-pass-odds') > 0">
-        <circle cx="250" cy="338" r="14" fill="#1a7a1a" stroke="#fff" stroke-width="2" />
-        <text x="250" y="342" class="chip-text-sm">{{ formatChipAmount(zoneBetTotal('dont-pass-odds')) }}</text>
-      </g>
-
-      <!-- Don't Pass chips -->
-      <g v-if="zoneBetTotal('dont-pass') > 0">
-        <circle cx="300" cy="338" r="14" fill="#333" stroke="#fff" stroke-width="2" />
-        <text x="300" y="342" class="chip-text-sm">{{ formatChipAmount(zoneBetTotal('dont-pass')) }}</text>
-      </g>
-
-      <!-- Come chips -->
-      <g v-if="zoneBetTotal('come') > 0">
-        <circle cx="405" cy="200" r="18" fill="#CC0000" stroke="#fff" stroke-width="2" />
-        <text x="405" y="205" class="chip-text">{{ formatChipAmount(zoneBetTotal('come')) }}</text>
-      </g>
-
-      <!-- Don't Come chips -->
-      <g v-if="zoneBetTotal('dont-come') > 0">
-        <circle cx="300" cy="133" r="14" fill="#333" stroke="#fff" stroke-width="2" />
-        <text x="300" y="137" class="chip-text-sm">{{ formatChipAmount(zoneBetTotal('dont-come')) }}</text>
-      </g>
-
-      <!-- Field chips -->
-      <g v-if="zoneBetTotal('field') > 0">
-        <circle cx="405" cy="282" r="16" fill="#CC0000" stroke="#fff" stroke-width="2" />
-        <text x="405" y="287" class="chip-text">{{ formatChipAmount(zoneBetTotal('field')) }}</text>
-      </g>
-
-      <!-- Number box chips -->
-      <template v-for="(num, idx) in [4, 5, 'six', 8, 'nine', 10]" :key="num">
-        <g v-if="zoneBetTotal(`place-${num}`) > 0">
+        <!-- Pass Line chips -->
+        <g v-if="zoneBetTotal('pass-line') > 0">
           <circle
-            :cx="155 + idx * 100"
-            cy="75"
-            r="14"
+            cx="370"
+            cy="460"
+            r="18"
             fill="#CC0000"
             stroke="#fff"
             stroke-width="2"
           />
-          <text :x="155 + idx * 100" y="79" class="chip-text-sm">
-            {{ formatChipAmount(zoneBetTotal(`place-${num}`)) }}
-          </text>
+          <text
+            x="370"
+            y="465"
+            class="chip-text"
+          >{{ formatChipAmount(zoneBetTotal('pass-line')) }}</text>
         </g>
-      </template>
 
-      <!-- Big 6 / Big 8 chips -->
-      <g v-if="zoneBetTotal('big-6') > 0">
-        <circle cx="67" cy="50" r="12" fill="#CC0000" stroke="#fff" stroke-width="1.5" />
-        <text x="67" y="54" class="chip-text-xs">{{ formatChipAmount(zoneBetTotal('big-6')) }}</text>
-      </g>
-      <g v-if="zoneBetTotal('big-8') > 0">
-        <circle cx="67" cy="90" r="12" fill="#CC0000" stroke="#fff" stroke-width="1.5" />
-        <text x="67" y="94" class="chip-text-xs">{{ formatChipAmount(zoneBetTotal('big-8')) }}</text>
-      </g>
-
-      <!-- Center prop chips (hardways) -->
-      <template v-for="(hw, i) in ['hard-4', 'hard-6', 'hard-8', 'hard-10']" :key="hw">
-        <g v-if="zoneBetTotal(hw) > 0">
+        <!-- Pass Odds chips (behind pass line chip) -->
+        <g v-if="zoneBetTotal('pass-odds') > 0">
           <circle
-            :cx="790 + i * 105"
+            cx="370"
+            cy="395"
+            r="16"
+            fill="#1a7a1a"
+            stroke="#fff"
+            stroke-width="2"
+          />
+          <text
+            x="370"
+            y="400"
+            class="chip-text-sm"
+          >{{ formatChipAmount(zoneBetTotal('pass-odds')) }}</text>
+          <text
+            x="370"
+            y="415"
+            class="label-odds-chip"
+          >ODDS</text>
+        </g>
+
+        <!-- Don't Pass Odds chips -->
+        <g v-if="zoneBetTotal('dont-pass-odds') > 0">
+          <circle
+            cx="250"
+            cy="338"
+            r="14"
+            fill="#1a7a1a"
+            stroke="#fff"
+            stroke-width="2"
+          />
+          <text
+            x="250"
+            y="342"
+            class="chip-text-sm"
+          >{{ formatChipAmount(zoneBetTotal('dont-pass-odds')) }}</text>
+        </g>
+
+        <!-- Don't Pass chips -->
+        <g v-if="zoneBetTotal('dont-pass') > 0">
+          <circle
+            cx="300"
+            cy="338"
+            r="14"
+            fill="#333"
+            stroke="#fff"
+            stroke-width="2"
+          />
+          <text
+            x="300"
+            y="342"
+            class="chip-text-sm"
+          >{{ formatChipAmount(zoneBetTotal('dont-pass')) }}</text>
+        </g>
+
+        <!-- Come chips -->
+        <g v-if="zoneBetTotal('come') > 0">
+          <circle
+            cx="405"
+            cy="200"
+            r="18"
+            fill="#CC0000"
+            stroke="#fff"
+            stroke-width="2"
+          />
+          <text
+            x="405"
+            y="205"
+            class="chip-text"
+          >{{ formatChipAmount(zoneBetTotal('come')) }}</text>
+        </g>
+
+        <!-- Don't Come chips -->
+        <g v-if="zoneBetTotal('dont-come') > 0">
+          <circle
+            cx="300"
+            cy="133"
+            r="14"
+            fill="#333"
+            stroke="#fff"
+            stroke-width="2"
+          />
+          <text
+            x="300"
+            y="137"
+            class="chip-text-sm"
+          >{{ formatChipAmount(zoneBetTotal('dont-come')) }}</text>
+        </g>
+
+        <!-- Field chips -->
+        <g v-if="zoneBetTotal('field') > 0">
+          <circle
+            cx="405"
+            cy="282"
+            r="16"
+            fill="#CC0000"
+            stroke="#fff"
+            stroke-width="2"
+          />
+          <text
+            x="405"
+            y="287"
+            class="chip-text"
+          >{{ formatChipAmount(zoneBetTotal('field')) }}</text>
+        </g>
+
+        <!-- Number box chips -->
+        <template
+          v-for="(num, idx) in [4, 5, 'six', 8, 'nine', 10]"
+          :key="num"
+        >
+          <g v-if="zoneBetTotal(`place-${num}`) > 0">
+            <circle
+              :cx="155 + idx * 100"
+              cy="75"
+              r="14"
+              fill="#CC0000"
+              stroke="#fff"
+              stroke-width="2"
+            />
+            <text
+              :x="155 + idx * 100"
+              y="79"
+              class="chip-text-sm"
+            >
+              {{ formatChipAmount(zoneBetTotal(`place-${num}`)) }}
+            </text>
+          </g>
+        </template>
+
+        <!-- Big 6 / Big 8 chips -->
+        <g v-if="zoneBetTotal('big-6') > 0">
+          <circle
+            cx="67"
+            cy="50"
+            r="12"
+            fill="#CC0000"
+            stroke="#fff"
+            stroke-width="1.5"
+          />
+          <text
+            x="67"
+            y="54"
+            class="chip-text-xs"
+          >{{ formatChipAmount(zoneBetTotal('big-6')) }}</text>
+        </g>
+        <g v-if="zoneBetTotal('big-8') > 0">
+          <circle
+            cx="67"
             cy="90"
             r="12"
             fill="#CC0000"
             stroke="#fff"
             stroke-width="1.5"
           />
-          <text :x="790 + i * 105" y="94" class="chip-text-xs">{{ formatChipAmount(zoneBetTotal(hw)) }}</text>
+          <text
+            x="67"
+            y="94"
+            class="chip-text-xs"
+          >{{ formatChipAmount(zoneBetTotal('big-8')) }}</text>
         </g>
-      </template>
 
-      <!-- Any Seven chip -->
-      <g v-if="zoneBetTotal('any-seven') > 0">
-        <circle cx="950" cy="157" r="14" fill="#CC0000" stroke="#fff" stroke-width="2" />
-        <text x="950" y="161" class="chip-text-sm">{{ formatChipAmount(zoneBetTotal('any-seven')) }}</text>
+        <!-- Center prop chips (hardways) -->
+        <template
+          v-for="(hw, i) in ['hard-4', 'hard-6', 'hard-8', 'hard-10']"
+          :key="hw"
+        >
+          <g v-if="zoneBetTotal(hw) > 0">
+            <circle
+              :cx="790 + i * 105"
+              cy="90"
+              r="12"
+              fill="#CC0000"
+              stroke="#fff"
+              stroke-width="1.5"
+            />
+            <text
+              :x="790 + i * 105"
+              y="94"
+              class="chip-text-xs"
+            >{{ formatChipAmount(zoneBetTotal(hw)) }}</text>
+          </g>
+        </template>
+
+        <!-- Any Seven chip -->
+        <g v-if="zoneBetTotal('any-seven') > 0">
+          <circle
+            cx="950"
+            cy="157"
+            r="14"
+            fill="#CC0000"
+            stroke="#fff"
+            stroke-width="2"
+          />
+          <text
+            x="950"
+            y="161"
+            class="chip-text-sm"
+          >{{ formatChipAmount(zoneBetTotal('any-seven')) }}</text>
+        </g>
+
+        <!-- Any Craps chip -->
+        <g v-if="zoneBetTotal('any-craps') > 0">
+          <circle
+            cx="950"
+            cy="217"
+            r="14"
+            fill="#CC0000"
+            stroke="#fff"
+            stroke-width="2"
+          />
+          <text
+            x="950"
+            y="221"
+            class="chip-text-sm"
+          >{{ formatChipAmount(zoneBetTotal('any-craps')) }}</text>
+        </g>
       </g>
 
-      <!-- Any Craps chip -->
-      <g v-if="zoneBetTotal('any-craps') > 0">
-        <circle cx="950" cy="217" r="14" fill="#CC0000" stroke="#fff" stroke-width="2" />
-        <text x="950" y="221" class="chip-text-sm">{{ formatChipAmount(zoneBetTotal('any-craps')) }}</text>
+      <!-- ==================== PUCK ==================== -->
+      <g
+        id="puck"
+        pointer-events="none"
+      >
+        <!-- OFF puck (black) -->
+        <g v-if="puckState === 'OFF'">
+          <circle
+            :cx="puckX"
+            :cy="puckY"
+            r="20"
+            fill="#111"
+            stroke="#555"
+            stroke-width="2.5"
+          />
+          <text
+            :x="puckX"
+            :y="puckY + 1"
+            class="puck-text-off"
+          >OFF</text>
+        </g>
+        <!-- ON puck (white) -->
+        <g v-else-if="puckState === 'ON'">
+          <circle
+            :cx="puckX"
+            :cy="puckY"
+            r="20"
+            fill="#fff"
+            stroke="#333"
+            stroke-width="2.5"
+          />
+          <text
+            :x="puckX"
+            :y="puckY + 1"
+            class="puck-text-on"
+          >ON</text>
+        </g>
       </g>
-    </g>
+    </svg>
 
-    <!-- ==================== PUCK ==================== -->
-    <g id="puck" pointer-events="none">
-      <!-- OFF puck (black) -->
-      <g v-if="puckState === 'OFF'">
-        <circle :cx="puckX" :cy="puckY" r="20" fill="#111" stroke="#555" stroke-width="2.5" />
-        <text :x="puckX" :y="puckY + 1" class="puck-text-off">OFF</text>
-      </g>
-      <!-- ON puck (white) -->
-      <g v-else-if="puckState === 'ON'">
-        <circle :cx="puckX" :cy="puckY" r="20" fill="#fff" stroke="#333" stroke-width="2.5" />
-        <text :x="puckX" :y="puckY + 1" class="puck-text-on">ON</text>
-      </g>
-    </g>
-  </svg>
-
-  <!-- Study mode tooltip (HTML overlay) -->
-  <div
-    v-if="studyMode && studyHoveredZone && getStudyExplanation(studyHoveredZone)"
-    class="study-tooltip"
-    :style="{
-      left: Math.min(studyTooltipPos.x + 16, 800) + 'px',
-      top: (studyTooltipPos.y - 10) + 'px'
-    }"
-  >
-    <div class="study-tooltip-title">{{ getStudyExplanation(studyHoveredZone)!.title }}</div>
-    <div class="study-tooltip-edge">House edge: {{ getStudyExplanation(studyHoveredZone)!.edge }}</div>
-    <div class="study-tooltip-body">{{ getStudyExplanation(studyHoveredZone)!.body }}</div>
-    <div class="study-tooltip-status">{{ getStudyExplanation(studyHoveredZone)!.status }}</div>
-  </div>
+    <!-- Study mode tooltip (HTML overlay) -->
+    <div
+      v-if="studyMode && studyHoveredZone && getStudyExplanation(studyHoveredZone)"
+      class="study-tooltip"
+      :style="{
+        left: Math.min(studyTooltipPos.x + 16, 800) + 'px',
+        top: (studyTooltipPos.y - 10) + 'px'
+      }"
+    >
+      <div class="study-tooltip-title">
+        {{ getStudyExplanation(studyHoveredZone)!.title }}
+      </div>
+      <div class="study-tooltip-edge">
+        House edge: {{ getStudyExplanation(studyHoveredZone)!.edge }}
+      </div>
+      <div class="study-tooltip-body">
+        {{ getStudyExplanation(studyHoveredZone)!.body }}
+      </div>
+      <div class="study-tooltip-status">
+        {{ getStudyExplanation(studyHoveredZone)!.status }}
+      </div>
+    </div>
   </div>
 </template>
 

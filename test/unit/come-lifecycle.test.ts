@@ -1,5 +1,5 @@
-import { describe, it, expect, beforeEach } from 'vitest'
-import type { ActiveBet, BetResolution, DiceRoll, GamePhase, TableRules } from '../../app/utils/betTypes'
+import { describe, it, expect } from 'vitest'
+import type { ActiveBet, BetResolution, DiceRoll, TableRules } from '../../app/utils/betTypes'
 import { crapsConfig } from '../../craps.config'
 
 /**
@@ -27,16 +27,11 @@ function calculatePayout(bet: ActiveBet, tableRules: TableRules): number {
   return amount
 }
 
-function isBetWorking(bet: ActiveBet, phase: GamePhase): boolean {
-  // Come bets are always working
-  return true
-}
-
 function makeResolution(
   bet: ActiveBet,
   outcome: BetResolution['outcome'],
   payout: number,
-  description: string,
+  description: string
 ): BetResolution {
   let netGain = 0
   if (outcome === 'win') netGain = payout - bet.amount
@@ -47,7 +42,7 @@ function makeResolution(
 function resolveCome(
   bet: ActiveBet,
   roll: DiceRoll,
-  tableRules: TableRules,
+  tableRules: TableRules
 ): BetResolution | null {
   const { total } = roll
 
@@ -84,7 +79,7 @@ const defaultTableRules: TableRules = {
   fieldTwelvePayout: 3,
   buyVigTiming: 'on_win',
   hardwaysOnComeOut: false,
-  payoutRounding: 'exact',
+  payoutRounding: 'exact'
 }
 
 function makeComeBet(pointNumber: number | null = null): ActiveBet {
@@ -99,7 +94,7 @@ function makeComeBet(pointNumber: number | null = null): ActiveBet {
     isWorking: true,
     status: 'active',
     placedOnRoll: 1,
-    resolvedOnRoll: null,
+    resolvedOnRoll: null
   }
 }
 

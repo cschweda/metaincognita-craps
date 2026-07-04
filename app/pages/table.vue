@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { BetType, ActiveBet } from '~/utils/betTypes'
+import type { BetType } from '~/utils/betTypes'
 import { BET_TYPE_TO_ZONE } from '~/utils/betTypes'
 import { crapsConfig } from '~~/craps.config'
 
@@ -57,12 +57,20 @@ function startAutoRollTimer() {
 }
 
 function stopAutoRollTimer() {
-  if (autoRollInterval) { clearInterval(autoRollInterval); autoRollInterval = null }
-  if (autoRollTimer.value) { clearTimeout(autoRollTimer.value); autoRollTimer.value = null }
+  if (autoRollInterval) {
+    clearInterval(autoRollInterval)
+    autoRollInterval = null
+  }
+  if (autoRollTimer.value) {
+    clearTimeout(autoRollTimer.value)
+    autoRollTimer.value = null
+  }
   autoRollCountdown.value = 0
 }
 
-watch(autoRoll, (on) => { if (!on) stopAutoRollTimer() })
+watch(autoRoll, (on) => {
+  if (!on) stopAutoRollTimer()
+})
 onUnmounted(() => stopAutoRollTimer())
 
 // ── Take-down mode ──
@@ -70,10 +78,12 @@ const takeDownMode = ref(false)
 
 // ── Study mode (pauses game, shows zone explanations on hover) ──
 const studyMode = ref(false)
-watch(studyMode, (on) => { if (on) stopAutoRollTimer() })
+watch(studyMode, (on) => {
+  if (on) stopAutoRollTimer()
+})
 
 // ── Same Bet tracking ──
-const lastBetConfig = ref<Array<{ type: BetType; amount: number }>>([])
+const lastBetConfig = ref<Array<{ type: BetType, amount: number }>>([])
 
 function saveCurrentBets() {
   lastBetConfig.value = store.activeBets
@@ -145,12 +155,12 @@ const canRoll = computed(() =>
 const rollBlockedReason = computed(() => {
   if (diceRolling.value) return 'Rolling...'
   if (!['COME_OUT', 'POINT_PHASE'].includes(store.phase)) return 'Waiting for next phase'
-  if (!heroHasLineBet.value) return "Place a Pass Line or Don't Pass bet first (MBS Rule 3.7)"
+  if (!heroHasLineBet.value) return 'Place a Pass Line or Don\'t Pass bet first (MBS Rule 3.7)'
   return ''
 })
 
 // ── Payout animations ──
-const payoutFloaters = ref<Array<{ id: number; text: string; type: 'win' | 'lose' | 'push'; x: number }>>([])
+const payoutFloaters = ref<Array<{ id: number, text: string, type: 'win' | 'lose' | 'push', x: number }>>([])
 let floaterId = 0
 
 function showPayoutAnimations() {
@@ -159,9 +169,11 @@ function showPayoutAnimations() {
   let delay = 0
   for (const res of heroRes) {
     const id = ++floaterId
-    const text = res.outcome === 'win' ? `+${formatCents(res.netGain)}`
-      : res.outcome === 'lose' ? formatCents(res.netGain)
-      : 'Push'
+    const text = res.outcome === 'win'
+      ? `+${formatCents(res.netGain)}`
+      : res.outcome === 'lose'
+        ? formatCents(res.netGain)
+        : 'Push'
     const x = 300 + (delay * 80) // stagger horizontally
     setTimeout(() => {
       payoutFloaters.value.push({ id, text, type: res.outcome as 'win' | 'lose' | 'push', x })
@@ -223,8 +235,13 @@ const heroIsShooting = computed(() => store.shooterSeat === 0)
 
 // ── New game ──
 const showNewGameConfirm = ref(false)
-function requestNewGame() { showNewGameConfirm.value = true }
-function confirmNewGame() { store.clearSession(); router.push('/') }
+function requestNewGame() {
+  showNewGameConfirm.value = true
+}
+function confirmNewGame() {
+  store.clearSession()
+  router.push('/')
+}
 
 // ── Sidebar ──
 const showSidebar = ref(true)
@@ -268,7 +285,10 @@ function handleAdvisorBet(betType: BetType) {
         >
           ({{ (hero.bankroll - hero.startingBankroll) >= 0 ? '+' : '' }}{{ formatCents(hero.bankroll - hero.startingBankroll) }})
         </span>
-        <span v-if="!heroIsShooting" class="text-xs text-neutral-500 ml-2">
+        <span
+          v-if="!heroIsShooting"
+          class="text-xs text-neutral-500 ml-2"
+        >
           Shooter: {{ currentShooterName }}
         </span>
       </div>
@@ -306,10 +326,18 @@ function handleAdvisorBet(betType: BetType) {
           class="text-[10px] bg-neutral-800 text-neutral-400 border border-neutral-700 rounded px-1 py-0.5"
           title="Time between auto-rolls"
         >
-          <option :value="1000">1s</option>
-          <option :value="2000">2s</option>
-          <option :value="3000">3s</option>
-          <option :value="5000">5s</option>
+          <option :value="1000">
+            1s
+          </option>
+          <option :value="2000">
+            2s
+          </option>
+          <option :value="3000">
+            3s
+          </option>
+          <option :value="5000">
+            5s
+          </option>
         </select>
 
         <!-- Study mode toggle -->
@@ -382,7 +410,10 @@ function handleAdvisorBet(betType: BetType) {
         </div>
 
         <!-- Auto-roll countdown bar -->
-        <div v-if="autoRoll && autoRollCountdown > 0" class="h-1 bg-neutral-800 shrink-0">
+        <div
+          v-if="autoRoll && autoRollCountdown > 0"
+          class="h-1 bg-neutral-800 shrink-0"
+        >
           <div
             class="h-full bg-emerald-500 transition-all duration-100"
             :style="{ width: ((autoRollCountdown / autoRollSpeed) * 100) + '%' }"
@@ -440,8 +471,17 @@ function handleAdvisorBet(betType: BetType) {
         </p>
       </template>
       <template #footer>
-        <UButton variant="outline" color="neutral" label="Cancel" @click="showNewGameConfirm = false" />
-        <UButton color="error" label="Leave Table" @click="confirmNewGame" />
+        <UButton
+          variant="outline"
+          color="neutral"
+          label="Cancel"
+          @click="showNewGameConfirm = false"
+        />
+        <UButton
+          color="error"
+          label="Leave Table"
+          @click="confirmNewGame"
+        />
       </template>
     </UModal>
   </div>

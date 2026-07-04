@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeAll } from 'vitest'
+import { describe, it, expect } from 'vitest'
 
 /**
  * usePayoutCalc is a composable that reads crapsConfig at module scope.
@@ -62,7 +62,7 @@ const defaultRules: TableRules = {
   fieldTwelvePayout: 3,
   buyVigTiming: 'on_win',
   hardwaysOnComeOut: false,
-  payoutRounding: 'exact',
+  payoutRounding: 'exact'
 }
 
 describe('applyRatio', () => {
@@ -81,7 +81,7 @@ describe('applyRatio', () => {
     expect(applyRatio(3000, [3, 2])).toBe(4500)
   })
 
-  it("Don't Pass Odds on 4 ($10, 1:2) = $5", () => {
+  it('Don\'t Pass Odds on 4 ($10, 1:2) = $5', () => {
     // 1000 cents * 1/2 = 500 cents = $5
     expect(applyRatio(1000, [1, 2])).toBe(500)
   })
@@ -172,7 +172,7 @@ describe('Buy bet payout with vig on win', () => {
       isWorking: true,
       status: 'active',
       placedOnRoll: 1,
-      resolvedOnRoll: null,
+      resolvedOnRoll: null
     }
     const rules: TableRules = { ...defaultRules, buyVigTiming: 'on_win' }
     // Winnings = applyRatio(2000, [2,1]) = 4000
@@ -194,7 +194,7 @@ describe('Buy bet payout with vig on win', () => {
       isWorking: true,
       status: 'active',
       placedOnRoll: 1,
-      resolvedOnRoll: null,
+      resolvedOnRoll: null
     }
     const rules: TableRules = { ...defaultRules, buyVigTiming: 'on_bet' }
     // Winnings = 4000, no vig deducted at payout

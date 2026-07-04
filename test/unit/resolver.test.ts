@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { describe, it, expect, beforeEach } from 'vitest'
 import type { ActiveBet, BetResolution, DiceRoll, GamePhase, TableRules } from '../../app/utils/betTypes'
 import { crapsConfig } from '../../craps.config'
 
@@ -33,10 +33,18 @@ function betTypeToNumber(type: string): number | null {
   return match ? parseInt(match[0]) : null
 }
 
-function isPlaceBet(type: string): boolean { return type.startsWith('place') }
-function isBuyBet(type: string): boolean { return type.startsWith('buy') }
-function isLayBet(type: string): boolean { return type.startsWith('lay') }
-function isHardwayBet(type: string): boolean { return type.startsWith('hard') }
+function isPlaceBet(type: string): boolean {
+  return type.startsWith('place')
+}
+function isBuyBet(type: string): boolean {
+  return type.startsWith('buy')
+}
+function isLayBet(type: string): boolean {
+  return type.startsWith('lay')
+}
+function isHardwayBet(type: string): boolean {
+  return type.startsWith('hard')
+}
 
 const FIELD_NUMBERS = new Set([2, 3, 4, 9, 10, 11, 12])
 
@@ -158,7 +166,7 @@ function makeResolution(
     outcome,
     payout,
     netGain,
-    description,
+    description
   }
 }
 
@@ -167,7 +175,7 @@ function resolveSingleBet(
   roll: DiceRoll,
   phase: GamePhase,
   tableRules: TableRules,
-  point: number | null,
+  point: number | null
 ): BetResolution | null {
   const { total, isHard } = roll
   const { type, amount } = bet
@@ -192,12 +200,12 @@ function resolveSingleBet(
   if (type === 'dontPass') {
     if (phase === 'COME_OUT') {
       if (total === 2 || total === 3) return makeResolution(bet, 'win', calculatePayout(bet, tableRules), `Don't Pass wins on ${total}`)
-      if (total === 12) return makeResolution(bet, 'push', 0, "Don't Pass pushes on 12 (bar)")
+      if (total === 12) return makeResolution(bet, 'push', 0, 'Don\'t Pass pushes on 12 (bar)')
       if (total === 7 || total === 11) return makeResolution(bet, 'lose', 0, `Don't Pass loses on ${total}`)
       return makeResolution(bet, 'point_established', 0, `Point is ${total}`)
     }
     if (phase === 'POINT_PHASE') {
-      if (total === 7) return makeResolution(bet, 'win', calculatePayout(bet, tableRules), "Don't Pass wins - seven out")
+      if (total === 7) return makeResolution(bet, 'win', calculatePayout(bet, tableRules), 'Don\'t Pass wins - seven out')
       if (total === point) return makeResolution(bet, 'lose', 0, `Don't Pass loses - point ${point} made`)
     }
     return null
@@ -215,7 +223,7 @@ function resolveSingleBet(
   // DON'T PASS ODDS
   if (type === 'dontPassOdds') {
     if (phase === 'POINT_PHASE') {
-      if (total === 7) return makeResolution(bet, 'win', calculatePayout(bet, tableRules), "Don't Pass Odds wins - seven out")
+      if (total === 7) return makeResolution(bet, 'win', calculatePayout(bet, tableRules), 'Don\'t Pass Odds wins - seven out')
       if (total === point) return makeResolution(bet, 'lose', 0, `Don't Pass Odds loses - point ${point} made`)
     }
     return null
@@ -237,7 +245,7 @@ function resolveSingleBet(
 
   // DON'T COME (established)
   if (type === 'dontCome' && bet.pointNumber !== null) {
-    if (total === 7) return makeResolution(bet, 'win', calculatePayout(bet, tableRules), "Don't Come wins - seven out")
+    if (total === 7) return makeResolution(bet, 'win', calculatePayout(bet, tableRules), 'Don\'t Come wins - seven out')
     if (total === bet.pointNumber) return makeResolution(bet, 'lose', 0, `Don't Come loses - ${bet.pointNumber} hit`)
     return null
   }
@@ -254,7 +262,7 @@ function resolveSingleBet(
   // DON'T COME ODDS
   if (type === 'dontComeOdds') {
     if (bet.pointNumber !== null) {
-      if (total === 7) return makeResolution(bet, 'win', calculatePayout(bet, tableRules), "Don't Come Odds wins - seven out")
+      if (total === 7) return makeResolution(bet, 'win', calculatePayout(bet, tableRules), 'Don\'t Come Odds wins - seven out')
       if (total === bet.pointNumber) return makeResolution(bet, 'lose', 0, `Don't Come Odds loses - ${bet.pointNumber} hit`)
     }
     return null
@@ -334,7 +342,7 @@ function resolveRoll(
   activeBets: ActiveBet[],
   phase: GamePhase,
   tableRules: TableRules,
-  point: number | null,
+  point: number | null
 ): BetResolution[] {
   const resolutions: BetResolution[] = []
   const sorted = [...activeBets]
@@ -356,7 +364,7 @@ const defaultTableRules: TableRules = {
   fieldTwelvePayout: 3,
   buyVigTiming: 'on_win',
   hardwaysOnComeOut: false,
-  payoutRounding: 'exact',
+  payoutRounding: 'exact'
 }
 
 let betIdCounter = 0
@@ -373,7 +381,7 @@ function makeBet(overrides: Partial<ActiveBet> & Pick<ActiveBet, 'type'>): Activ
     status: 'active',
     placedOnRoll: 1,
     resolvedOnRoll: null,
-    ...overrides,
+    ...overrides
   }
 }
 
@@ -439,7 +447,7 @@ describe('resolveRoll – Pass Line', () => {
   })
 })
 
-describe("resolveRoll – Don't Pass", () => {
+describe('resolveRoll – Don\'t Pass', () => {
   it('wins on come-out 2', () => {
     const bet = makeBet({ type: 'dontPass' })
     const roll = makeRoll(1, 1) // total 2

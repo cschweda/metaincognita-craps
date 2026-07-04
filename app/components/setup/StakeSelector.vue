@@ -31,7 +31,10 @@ const stakes = crapsConfig.stakes
         ]"
         @click="emit('update:level', stake.level)"
       >
-        <div class="font-bold text-sm mb-2" :class="level === stake.level ? 'text-amber-400' : 'text-neutral-200'">
+        <div
+          class="font-bold text-sm mb-2"
+          :class="level === stake.level ? 'text-amber-400' : 'text-neutral-200'"
+        >
           {{ stake.name }}
         </div>
         <div class="space-y-1 text-xs text-neutral-400">

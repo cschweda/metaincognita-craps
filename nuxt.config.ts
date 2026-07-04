@@ -1,17 +1,10 @@
 export default defineNuxtConfig({
-  ssr: false,
 
   modules: ['@pinia/nuxt', '@nuxt/eslint', '@nuxt/ui', '@nuxt/test-utils'],
+  ssr: false,
 
   devtools: {
     enabled: true
-  },
-
-  css: ['~/assets/css/main.css'],
-
-  colorMode: {
-    preference: 'dark',
-    fallback: 'dark'
   },
 
   app: {
@@ -21,6 +14,13 @@ export default defineNuxtConfig({
         { name: 'description', content: 'Browser-based casino craps training tool' }
       ]
     }
+  },
+
+  css: ['~/assets/css/main.css'],
+
+  colorMode: {
+    preference: 'dark',
+    fallback: 'dark'
   },
 
   compatibilityDate: '2025-01-15',

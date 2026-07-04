@@ -82,7 +82,10 @@ function onCountChange(value: number | undefined) {
       </span>
     </div>
 
-    <div v-if="bots.length > 0" class="space-y-3">
+    <div
+      v-if="bots.length > 0"
+      class="space-y-3"
+    >
       <div class="flex gap-2">
         <UButton
           size="xs"

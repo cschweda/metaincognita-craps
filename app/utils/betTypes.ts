@@ -1,17 +1,17 @@
-export type BetType =
-  | 'pass' | 'dontPass'
-  | 'passOdds' | 'dontPassOdds'
-  | 'come' | 'dontCome'
-  | 'comeOdds' | 'dontComeOdds'
-  | 'place4' | 'place5' | 'place6' | 'place8' | 'place9' | 'place10'
-  | 'buy4' | 'buy5' | 'buy6' | 'buy8' | 'buy9' | 'buy10'
-  | 'lay4' | 'lay5' | 'lay6' | 'lay8' | 'lay9' | 'lay10'
-  | 'field'
-  | 'hard4' | 'hard6' | 'hard8' | 'hard10'
-  | 'any7' | 'anyCraps' | 'aces' | 'boxcars' | 'aceDeuce' | 'yo'
-  | 'crapsEleven' | 'horn' | 'hornHigh'
-  | 'big6' | 'big8'
-  | 'hopEasy' | 'hopHard'
+export type BetType
+  = | 'pass' | 'dontPass'
+    | 'passOdds' | 'dontPassOdds'
+    | 'come' | 'dontCome'
+    | 'comeOdds' | 'dontComeOdds'
+    | 'place4' | 'place5' | 'place6' | 'place8' | 'place9' | 'place10'
+    | 'buy4' | 'buy5' | 'buy6' | 'buy8' | 'buy9' | 'buy10'
+    | 'lay4' | 'lay5' | 'lay6' | 'lay8' | 'lay9' | 'lay10'
+    | 'field'
+    | 'hard4' | 'hard6' | 'hard8' | 'hard10'
+    | 'any7' | 'anyCraps' | 'aces' | 'boxcars' | 'aceDeuce' | 'yo'
+    | 'crapsEleven' | 'horn' | 'hornHigh'
+    | 'big6' | 'big8'
+    | 'hopEasy' | 'hopHard'
 
 export const ALL_BET_TYPES: BetType[] = [
   'pass', 'dontPass', 'passOdds', 'dontPassOdds',

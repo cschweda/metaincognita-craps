@@ -7,9 +7,7 @@ import {
   isPlaceBet,
   isHardwayBet,
   isOddsBet,
-  CONTRACT_BETS,
-  ONE_ROLL_BETS,
-  POINT_NUMBERS
+  CONTRACT_BETS
 } from '~/utils/betTypes'
 import { crapsConfig } from '~~/craps.config'
 
@@ -55,14 +53,14 @@ export function useBetManager() {
     // Pass/Don't Pass only on come-out
     if (type === 'pass' || type === 'dontPass') {
       if (phase !== 'COME_OUT') {
-        return { valid: false, reason: `${type === 'pass' ? 'Pass' : "Don't Pass"} bets can only be placed on the come-out roll` }
+        return { valid: false, reason: `${type === 'pass' ? 'Pass' : 'Don\'t Pass'} bets can only be placed on the come-out roll` }
       }
     }
 
     // Come/Don't Come only during point phase
     if (type === 'come' || type === 'dontCome') {
       if (phase !== 'POINT_PHASE') {
-        return { valid: false, reason: `${type === 'come' ? 'Come' : "Don't Come"} bets can only be placed during the point phase` }
+        return { valid: false, reason: `${type === 'come' ? 'Come' : 'Don\'t Come'} bets can only be placed during the point phase` }
       }
     }
 
@@ -97,10 +95,10 @@ export function useBetManager() {
         b => b.owner === owner && b.type === 'dontPass' && b.status !== 'resolved'
       )
       if (!parentDontPass) {
-        return { valid: false, reason: "Must have a Don't Pass bet to place Don't Pass Odds" }
+        return { valid: false, reason: 'Must have a Don\'t Pass bet to place Don\'t Pass Odds' }
       }
       if (!point) {
-        return { valid: false, reason: "Don't Pass Odds can only be placed after a point is established" }
+        return { valid: false, reason: 'Don\'t Pass Odds can only be placed after a point is established' }
       }
       // Lay odds max: sized so the PAYOUT doesn't exceed the pass odds max
       // (i.e., you can lay enough to WIN the same as a pass odds bettor)
@@ -135,7 +133,7 @@ export function useBetManager() {
         b => b.owner === owner && b.type === 'dontCome' && b.pointNumber !== null && b.status !== 'resolved'
       )
       if (!parentDontCome) {
-        return { valid: false, reason: "Must have an established Don't Come bet to place Don't Come Odds" }
+        return { valid: false, reason: 'Must have an established Don\'t Come bet to place Don\'t Come Odds' }
       }
       // Lay odds max: sized so the PAYOUT doesn't exceed the come odds max
       const maxComeOdds = getMaxOdds(parentDontCome.amount, parentDontCome.pointNumber!, tableRules.oddsMultiple)
@@ -151,10 +149,10 @@ export function useBetManager() {
     // Don't bet removal constraint (MBS 3.16.1)
     // Once a Don't bet is removed, cannot re-place same type this cycle
     if (type === 'dontPass' && dontBetRemovedThisCycle.has(`${owner}-dontPass`)) {
-      return { valid: false, reason: "Cannot re-place Don't Pass after removing it this cycle (MBS 3.16.1)" }
+      return { valid: false, reason: 'Cannot re-place Don\'t Pass after removing it this cycle (MBS 3.16.1)' }
     }
     if (type === 'dontCome' && dontBetRemovedThisCycle.has(`${owner}-dontCome`)) {
-      return { valid: false, reason: "Cannot re-place Don't Come after removing it this cycle (MBS 3.16.1)" }
+      return { valid: false, reason: 'Cannot re-place Don\'t Come after removing it this cycle (MBS 3.16.1)' }
     }
 
     // Min/max sizing (skip for odds bets - they have their own limits)

@@ -17,40 +17,68 @@ const sessionStats = computed(() => store.sessionStats)
   <div class="flex-1 bg-neutral-950 overflow-y-auto">
     <div class="max-w-[800px] mx-auto px-4 py-8 space-y-6">
       <div class="space-y-1">
-        <h1 class="text-2xl font-bold text-neutral-200">Roll History</h1>
-        <p class="text-sm text-neutral-500">Complete roll-by-roll record of your session.</p>
+        <h1 class="text-2xl font-bold text-neutral-200">
+          Roll History
+        </h1>
+        <p class="text-sm text-neutral-500">
+          Complete roll-by-roll record of your session.
+        </p>
       </div>
 
       <template v-if="hasSession">
         <!-- Session summary -->
         <div class="rounded-xl bg-neutral-900/80 border border-neutral-800 p-5 grid grid-cols-2 sm:grid-cols-4 gap-4">
           <div>
-            <p class="text-[10px] uppercase tracking-widest text-neutral-500">Total Rolls</p>
-            <p class="text-xl font-mono text-neutral-200">{{ sessionStats.rollsWitnessed }}</p>
+            <p class="text-[10px] uppercase tracking-widest text-neutral-500">
+              Total Rolls
+            </p>
+            <p class="text-xl font-mono text-neutral-200">
+              {{ sessionStats.rollsWitnessed }}
+            </p>
           </div>
           <div>
-            <p class="text-[10px] uppercase tracking-widest text-neutral-500">Points Made</p>
-            <p class="text-xl font-mono text-emerald-400">{{ sessionStats.pointsMade }}</p>
+            <p class="text-[10px] uppercase tracking-widest text-neutral-500">
+              Points Made
+            </p>
+            <p class="text-xl font-mono text-emerald-400">
+              {{ sessionStats.pointsMade }}
+            </p>
           </div>
           <div>
-            <p class="text-[10px] uppercase tracking-widest text-neutral-500">Points Missed</p>
-            <p class="text-xl font-mono text-red-400">{{ sessionStats.pointsMissed }}</p>
+            <p class="text-[10px] uppercase tracking-widest text-neutral-500">
+              Points Missed
+            </p>
+            <p class="text-xl font-mono text-red-400">
+              {{ sessionStats.pointsMissed }}
+            </p>
           </div>
           <div>
-            <p class="text-[10px] uppercase tracking-widest text-neutral-500">Longest Shooter</p>
-            <p class="text-xl font-mono text-amber-400">{{ sessionStats.longestShooterRolls }}</p>
+            <p class="text-[10px] uppercase tracking-widest text-neutral-500">
+              Longest Shooter
+            </p>
+            <p class="text-xl font-mono text-amber-400">
+              {{ sessionStats.longestShooterRolls }}
+            </p>
           </div>
         </div>
 
         <!-- Roll log -->
         <div class="rounded-xl bg-neutral-900/80 border border-neutral-800 overflow-hidden">
           <div class="px-5 py-3 border-b border-neutral-800">
-            <h2 class="text-sm font-semibold text-neutral-300">Roll Log</h2>
+            <h2 class="text-sm font-semibold text-neutral-300">
+              Roll Log
+            </h2>
           </div>
-          <div v-if="rollHistory.length === 0" class="px-5 py-8 text-center text-neutral-600 text-sm">
+          <div
+            v-if="rollHistory.length === 0"
+            class="px-5 py-8 text-center text-neutral-600 text-sm"
+          >
             No rolls yet. Start playing to see your history here.
           </div>
-          <div v-else class="divide-y divide-neutral-800/50 max-h-[500px] overflow-y-auto">
+          <div
+            v-else
+            class="divide-y divide-neutral-800/50 max-h-[500px] overflow-y-auto"
+          >
             <div
               v-for="(roll, i) in rollHistory"
               :key="i"
@@ -74,15 +102,23 @@ const sessionStats = computed(() => store.sessionStats)
                 >
                   {{ roll.total }}
                 </span>
-                <span v-if="roll.isHard" class="text-[10px] text-amber-500 font-mono">HARD</span>
+                <span
+                  v-if="roll.isHard"
+                  class="text-[10px] text-amber-500 font-mono"
+                >HARD</span>
               </div>
             </div>
           </div>
         </div>
       </template>
 
-      <div v-else class="rounded-xl bg-neutral-900/80 border border-neutral-800 px-5 py-12 text-center">
-        <p class="text-neutral-500 text-sm">No active session. Start a game to track your history.</p>
+      <div
+        v-else
+        class="rounded-xl bg-neutral-900/80 border border-neutral-800 px-5 py-12 text-center"
+      >
+        <p class="text-neutral-500 text-sm">
+          No active session. Start a game to track your history.
+        </p>
       </div>
     </div>
   </div>

@@ -12,7 +12,7 @@ const stakeLevel = ref(crapsConfig.defaultStakeLevel)
 const selectedStake = computed(() => crapsConfig.stakes[stakeLevel.value - 1]!)
 const bankroll = ref(selectedStake.value.defaultBankroll)
 const tableRules = ref<Partial<TableRules>>({})
-const bots = ref<Array<{ name: string; strategy: string }>>([])
+const bots = ref<Array<{ name: string, strategy: string }>>([])
 
 // Initialize default bots
 const defaultBots = crapsConfig.botStrategies.slice(0, 3).map(s => ({
@@ -101,9 +101,22 @@ function startGame() {
         <div class="border-t border-neutral-800" />
 
         <!-- Validation hints -->
-        <div v-if="nameError || bankrollError" class="space-y-1">
-          <p v-if="nameError" class="text-red-400 text-sm">{{ nameError }}</p>
-          <p v-if="bankrollError" class="text-red-400 text-sm">{{ bankrollError }}</p>
+        <div
+          v-if="nameError || bankrollError"
+          class="space-y-1"
+        >
+          <p
+            v-if="nameError"
+            class="text-red-400 text-sm"
+          >
+            {{ nameError }}
+          </p>
+          <p
+            v-if="bankrollError"
+            class="text-red-400 text-sm"
+          >
+            {{ bankrollError }}
+          </p>
         </div>
 
         <!-- Start Button -->

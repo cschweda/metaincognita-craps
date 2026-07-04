@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from 'vitest'
+import { describe, it, expect } from 'vitest'
 import type { ActiveBet, BetResolution, DiceRoll, GamePhase, TableRules } from '../../app/utils/betTypes'
 import { crapsConfig } from '../../craps.config'
 
@@ -15,9 +15,6 @@ const { payouts } = crapsConfig
 function applyRatio(amountCents: number, ratio: [number, number]): number {
   return Math.floor(amountCents * ratio[0] / ratio[1])
 }
-function calculateVig(amountCents: number): number {
-  return Math.floor(amountCents * 5 / 100)
-}
 function applyPayoutRounding(cents: number, rounding: TableRules['payoutRounding']): number {
   if (rounding === 'dollar') return Math.floor(cents / 100) * 100
   if (rounding === 'quarter') return Math.floor(cents / 25) * 25
@@ -27,22 +24,52 @@ function betTypeToNumber(type: string): number | null {
   const match = type.match(/\d+/)
   return match ? parseInt(match[0]) : null
 }
-function isPlaceBet(type: string): boolean { return type.startsWith('place') }
-function isBuyBet(type: string): boolean { return type.startsWith('buy') }
-function isLayBet(type: string): boolean { return type.startsWith('lay') }
-function isHardwayBet(type: string): boolean { return type.startsWith('hard') }
+function isPlaceBet(type: string): boolean {
+  return type.startsWith('place')
+}
+function isBuyBet(type: string): boolean {
+  return type.startsWith('buy')
+}
+function isLayBet(type: string): boolean {
+  return type.startsWith('lay')
+}
+function isHardwayBet(type: string): boolean {
+  return type.startsWith('hard')
+}
 const FIELD_NUMBERS = new Set([2, 3, 4, 9, 10, 11, 12])
 
 function calculatePayout(bet: ActiveBet, tableRules: TableRules): number {
   const { type, amount } = bet
   if (type === 'pass' || type === 'come') return amount + applyPayoutRounding(applyRatio(amount, payouts.passLine.win), tableRules.payoutRounding)
   if (type === 'dontPass' || type === 'dontCome') return amount + applyPayoutRounding(applyRatio(amount, payouts.dontPass.win), tableRules.payoutRounding)
-  if (type === 'passOdds') { const r = payouts.passOdds[bet.pointNumber!]; return r ? amount + applyRatio(amount, r) : amount }
-  if (type === 'dontPassOdds') { const r = payouts.dontOdds[bet.pointNumber!]; return r ? amount + applyRatio(amount, r) : amount }
-  if (type === 'comeOdds') { const r = payouts.passOdds[bet.pointNumber!]; return r ? amount + applyRatio(amount, r) : amount }
-  if (type === 'dontComeOdds') { const r = payouts.dontOdds[bet.pointNumber!]; return r ? amount + applyRatio(amount, r) : amount }
-  if (isPlaceBet(type)) { const n = betTypeToNumber(type); if (!n) return amount; const r = payouts.place[n]; return r ? amount + applyPayoutRounding(applyRatio(amount, r), tableRules.payoutRounding) : amount }
-  if (isHardwayBet(type)) { const n = betTypeToNumber(type); if (!n) return amount; const r = payouts.hardway[n]; return r ? amount + applyRatio(amount, r) : amount }
+  if (type === 'passOdds') {
+    const r = payouts.passOdds[bet.pointNumber!]
+    return r ? amount + applyRatio(amount, r) : amount
+  }
+  if (type === 'dontPassOdds') {
+    const r = payouts.dontOdds[bet.pointNumber!]
+    return r ? amount + applyRatio(amount, r) : amount
+  }
+  if (type === 'comeOdds') {
+    const r = payouts.passOdds[bet.pointNumber!]
+    return r ? amount + applyRatio(amount, r) : amount
+  }
+  if (type === 'dontComeOdds') {
+    const r = payouts.dontOdds[bet.pointNumber!]
+    return r ? amount + applyRatio(amount, r) : amount
+  }
+  if (isPlaceBet(type)) {
+    const n = betTypeToNumber(type)
+    if (!n) return amount
+    const r = payouts.place[n]
+    return r ? amount + applyPayoutRounding(applyRatio(amount, r), tableRules.payoutRounding) : amount
+  }
+  if (isHardwayBet(type)) {
+    const n = betTypeToNumber(type)
+    if (!n) return amount
+    const r = payouts.hardway[n]
+    return r ? amount + applyRatio(amount, r) : amount
+  }
   if (type === 'any7') return amount + applyRatio(amount, payouts.any7.win)
   if (type === 'big6') return amount + applyRatio(amount, payouts.big6.win)
   if (type === 'big8') return amount + applyRatio(amount, payouts.big8.win)
@@ -89,7 +116,7 @@ function resolveSingleBet(bet: ActiveBet, roll: DiceRoll, phase: GamePhase, tabl
   }
   if (type === 'dontPass') {
     if (phase === 'POINT_PHASE') {
-      if (total === 7) return makeResolution(bet, 'win', calculatePayout(bet, tableRules), "Don't Pass wins - seven out")
+      if (total === 7) return makeResolution(bet, 'win', calculatePayout(bet, tableRules), 'Don\'t Pass wins - seven out')
       if (total === point) return makeResolution(bet, 'lose', 0, `Don't Pass loses - point ${point} made`)
     }
     return null
@@ -103,7 +130,7 @@ function resolveSingleBet(bet: ActiveBet, roll: DiceRoll, phase: GamePhase, tabl
   }
   if (type === 'dontPassOdds') {
     if (phase === 'POINT_PHASE') {
-      if (total === 7) return makeResolution(bet, 'win', calculatePayout(bet, tableRules), "Don't Pass Odds wins - seven out")
+      if (total === 7) return makeResolution(bet, 'win', calculatePayout(bet, tableRules), 'Don\'t Pass Odds wins - seven out')
       if (total === point) return makeResolution(bet, 'lose', 0, `Don't Pass Odds loses - point ${point} made`)
     }
     return null
@@ -119,7 +146,7 @@ function resolveSingleBet(bet: ActiveBet, roll: DiceRoll, phase: GamePhase, tabl
     return null
   }
   if (type === 'dontCome' && bet.pointNumber !== null) {
-    if (total === 7) return makeResolution(bet, 'win', calculatePayout(bet, tableRules), "Don't Come wins - seven out")
+    if (total === 7) return makeResolution(bet, 'win', calculatePayout(bet, tableRules), 'Don\'t Come wins - seven out')
     if (total === bet.pointNumber) return makeResolution(bet, 'lose', 0, `Don't Come loses - ${bet.pointNumber} hit`)
     return null
   }
@@ -132,7 +159,7 @@ function resolveSingleBet(bet: ActiveBet, roll: DiceRoll, phase: GamePhase, tabl
   }
   if (type === 'dontComeOdds') {
     if (bet.pointNumber !== null) {
-      if (total === 7) return makeResolution(bet, 'win', calculatePayout(bet, tableRules), "Don't Come Odds wins - seven out")
+      if (total === 7) return makeResolution(bet, 'win', calculatePayout(bet, tableRules), 'Don\'t Come Odds wins - seven out')
       if (total === bet.pointNumber) return makeResolution(bet, 'lose', 0, `Don't Come Odds loses - ${bet.pointNumber} hit`)
     }
     return null
@@ -209,7 +236,7 @@ const defaultTableRules: TableRules = {
   fieldTwelvePayout: 3,
   buyVigTiming: 'on_win',
   hardwaysOnComeOut: false,
-  payoutRounding: 'exact',
+  payoutRounding: 'exact'
 }
 
 function makeBet(id: string, overrides: Partial<ActiveBet> & Pick<ActiveBet, 'type'>): ActiveBet {
@@ -224,7 +251,7 @@ function makeBet(id: string, overrides: Partial<ActiveBet> & Pick<ActiveBet, 'ty
     status: 'active',
     placedOnRoll: 1,
     resolvedOnRoll: null,
-    ...overrides,
+    ...overrides
   }
 }
 
@@ -262,7 +289,7 @@ describe('Seven-out cascade', () => {
       // Any 7
       makeBet('any7', { type: 'any7', amount: 500 }),
       // Big 8
-      makeBet('big8', { type: 'big8', amount: 500 }),
+      makeBet('big8', { type: 'big8', amount: 500 })
     ]
 
     const roll: DiceRoll = { die1: 4, die2: 3, total: 7, isHard: false }
@@ -333,7 +360,7 @@ describe('Seven-out cascade', () => {
     const bets: ActiveBet[] = [
       makeBet('pass', { type: 'pass' }),
       makeBet('field', { type: 'field', amount: 500 }),
-      makeBet('any7', { type: 'any7', amount: 500 }),
+      makeBet('any7', { type: 'any7', amount: 500 })
     ]
     const roll: DiceRoll = { die1: 3, die2: 4, total: 7, isHard: false }
     const resolutions = resolveRoll(roll, bets, 'POINT_PHASE', defaultTableRules, 6)

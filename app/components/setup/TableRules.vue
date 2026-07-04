@@ -56,7 +56,10 @@ const roundingOptions = [
       <span class="text-xs text-neutral-500 font-normal normal-case">(optional)</span>
     </button>
 
-    <div v-show="open" class="space-y-5 pl-1 pt-2">
+    <div
+      v-show="open"
+      class="space-y-5 pl-1 pt-2"
+    >
       <!-- Odds Multiple -->
       <UFormField label="Odds Multiple">
         <USelect

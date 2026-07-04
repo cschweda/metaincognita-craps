@@ -72,8 +72,8 @@ function priorityBorder(p: string): string {
 
 function betTypeLabel(type: string): string {
   const labels: Record<string, string> = {
-    pass: 'Pass Line', dontPass: "Don't Pass", come: 'Come', dontCome: "Don't Come",
-    passOdds: 'Pass Odds', dontPassOdds: "DP Odds", comeOdds: 'Come Odds', dontComeOdds: "DC Odds",
+    pass: 'Pass Line', dontPass: 'Don\'t Pass', come: 'Come', dontCome: 'Don\'t Come',
+    passOdds: 'Pass Odds', dontPassOdds: 'DP Odds', comeOdds: 'Come Odds', dontComeOdds: 'DC Odds',
     place4: 'Place 4', place5: 'Place 5', place6: 'Place 6', place8: 'Place 8', place9: 'Place 9', place10: 'Place 10',
     buy4: 'Buy 4', buy5: 'Buy 5', buy6: 'Buy 6', buy8: 'Buy 8', buy9: 'Buy 9', buy10: 'Buy 10',
     lay4: 'Lay 4', lay5: 'Lay 5', lay6: 'Lay 6', lay8: 'Lay 8', lay9: 'Lay 9', lay10: 'Lay 10',
@@ -110,9 +110,15 @@ function betTypeLabel(type: string): string {
     <!-- Tab content -->
     <div class="flex-1 overflow-y-auto">
       <!-- ADVISOR TAB -->
-      <div v-if="activeTab === 'advisor'" class="p-3 space-y-2">
+      <div
+        v-if="activeTab === 'advisor'"
+        class="p-3 space-y-2"
+      >
         <!-- Dice result + phase at top of advisor -->
-        <div v-if="store.currentRoll" class="flex items-center gap-2 bg-neutral-800/80 rounded-lg px-3 py-2">
+        <div
+          v-if="store.currentRoll"
+          class="flex items-center gap-2 bg-neutral-800/80 rounded-lg px-3 py-2"
+        >
           <div class="flex items-center gap-1">
             <span class="inline-flex items-center justify-center w-6 h-6 rounded bg-white text-black font-bold text-xs border border-neutral-400">{{ store.currentRoll.die1 }}</span>
             <span class="inline-flex items-center justify-center w-6 h-6 rounded bg-white text-black font-bold text-xs border border-neutral-400">{{ store.currentRoll.die2 }}</span>
@@ -123,19 +129,28 @@ function betTypeLabel(type: string): string {
               'text-red-400': store.currentRoll.total === 7 && !store.isComingOut,
               'text-emerald-400': (store.currentRoll.total === 7 || store.currentRoll.total === 11) && store.isComingOut,
               'text-amber-400': store.currentRoll.total === store.point,
-              'text-neutral-200': ![7,11].includes(store.currentRoll.total) && store.currentRoll.total !== store.point
+              'text-neutral-200': ![7, 11].includes(store.currentRoll.total) && store.currentRoll.total !== store.point
             }"
           >= {{ store.currentRoll.total }}</span>
-          <span v-if="store.currentRoll.isHard && [4,6,8,10].includes(store.currentRoll.total)" class="text-amber-400 text-[10px]">(hard)</span>
+          <span
+            v-if="store.currentRoll.isHard && [4, 6, 8, 10].includes(store.currentRoll.total)"
+            class="text-amber-400 text-[10px]"
+          >(hard)</span>
           <span class="ml-auto text-neutral-500 text-[10px]">
             {{ store.isComingOut ? 'Come Out' : store.point ? `Point: ${store.point}` : '' }}
           </span>
         </div>
-        <div v-else-if="store.phase !== 'SETUP'" class="bg-neutral-800/60 rounded-lg px-3 py-2 text-center text-neutral-500 text-xs">
+        <div
+          v-else-if="store.phase !== 'SETUP'"
+          class="bg-neutral-800/60 rounded-lg px-3 py-2 text-center text-neutral-500 text-xs"
+        >
           {{ store.isComingOut ? 'Come-Out Roll — place your bets!' : `Point is ${store.point}` }}
         </div>
 
-        <div v-if="recommendations.length === 0" class="text-neutral-500 text-xs italic py-4 text-center">
+        <div
+          v-if="recommendations.length === 0"
+          class="text-neutral-500 text-xs italic py-4 text-center"
+        >
           No recommendations right now. Place some bets!
         </div>
         <div
@@ -146,8 +161,15 @@ function betTypeLabel(type: string): string {
         >
           <!-- Action headline -->
           <div class="flex items-start gap-2">
-            <UIcon :name="priorityIcon(rec.priority)" class="w-4 h-4 mt-0.5 shrink-0" :class="priorityColor(rec.priority)" />
-            <p class="font-semibold text-xs" :class="priorityColor(rec.priority)">
+            <UIcon
+              :name="priorityIcon(rec.priority)"
+              class="w-4 h-4 mt-0.5 shrink-0"
+              :class="priorityColor(rec.priority)"
+            />
+            <p
+              class="font-semibold text-xs"
+              :class="priorityColor(rec.priority)"
+            >
               {{ rec.action }}
             </p>
           </div>
@@ -168,7 +190,10 @@ function betTypeLabel(type: string): string {
           </div>
 
           <!-- Detail paragraphs -->
-          <div v-if="rec.detail && rec.detail.length > 0" class="mt-2 space-y-1.5">
+          <div
+            v-if="rec.detail && rec.detail.length > 0"
+            class="mt-2 space-y-1.5"
+          >
             <p
               v-for="(para, j) in rec.detail"
               :key="j"
@@ -186,17 +211,28 @@ function betTypeLabel(type: string): string {
           </div>
 
           <!-- House edge badge -->
-          <p v-if="rec.houseEdge !== undefined" class="mt-1.5 text-neutral-500 text-[10px]">
+          <p
+            v-if="rec.houseEdge !== undefined"
+            class="mt-1.5 text-neutral-500 text-[10px]"
+          >
             House edge: {{ rec.houseEdge === 0 ? '0% (true odds — best bet in the casino!)' : formatPercent(rec.houseEdge) }}
           </p>
         </div>
       </div>
 
       <!-- SESSION TAB -->
-      <div v-if="activeTab === 'session'" class="p-3 space-y-3">
+      <div
+        v-if="activeTab === 'session'"
+        class="p-3 space-y-3"
+      >
         <!-- Current roll result -->
-        <div v-if="store.currentRoll" class="bg-neutral-800/80 rounded-lg p-3 text-center">
-          <div class="text-neutral-500 text-[10px] uppercase tracking-wider mb-1">Last Roll</div>
+        <div
+          v-if="store.currentRoll"
+          class="bg-neutral-800/80 rounded-lg p-3 text-center"
+        >
+          <div class="text-neutral-500 text-[10px] uppercase tracking-wider mb-1">
+            Last Roll
+          </div>
           <div class="flex items-center justify-center gap-3">
             <div class="flex items-center gap-1.5">
               <span class="inline-flex items-center justify-center w-8 h-8 rounded bg-white text-black font-bold text-sm border border-neutral-300">
@@ -220,14 +256,22 @@ function betTypeLabel(type: string): string {
               </span>
             </div>
           </div>
-          <div v-if="store.currentRoll.isHard && [4,6,8,10].includes(store.currentRoll.total)" class="text-amber-400 text-[10px] mt-1 font-medium">
+          <div
+            v-if="store.currentRoll.isHard && [4, 6, 8, 10].includes(store.currentRoll.total)"
+            class="text-amber-400 text-[10px] mt-1 font-medium"
+          >
             HARD {{ store.currentRoll.total }}
           </div>
-          <div class="text-neutral-400 text-[10px] mt-1">{{ store.stickmanCall }}</div>
+          <div class="text-neutral-400 text-[10px] mt-1">
+            {{ store.stickmanCall }}
+          </div>
         </div>
 
         <!-- Point indicator -->
-        <div v-if="store.point" class="flex items-center justify-between bg-neutral-800/60 rounded-lg px-3 py-2">
+        <div
+          v-if="store.point"
+          class="flex items-center justify-between bg-neutral-800/60 rounded-lg px-3 py-2"
+        >
           <span class="text-neutral-400 text-xs">Point</span>
           <div class="flex items-center gap-2">
             <span class="text-amber-400 font-bold text-lg">{{ store.point }}</span>
@@ -240,11 +284,17 @@ function betTypeLabel(type: string): string {
         <!-- Quick stats -->
         <div class="grid grid-cols-2 gap-2">
           <div class="bg-neutral-800/60 rounded-lg p-2">
-            <div class="text-neutral-500 text-xs">Rolls</div>
-            <div class="text-neutral-100 font-mono font-bold">{{ store.sessionStats.rollsWitnessed }}</div>
+            <div class="text-neutral-500 text-xs">
+              Rolls
+            </div>
+            <div class="text-neutral-100 font-mono font-bold">
+              {{ store.sessionStats.rollsWitnessed }}
+            </div>
           </div>
           <div class="bg-neutral-800/60 rounded-lg p-2">
-            <div class="text-neutral-500 text-xs">P&L</div>
+            <div class="text-neutral-500 text-xs">
+              P&L
+            </div>
             <div
               class="font-mono font-bold"
               :class="store.sessionStats.totalProfitLoss >= 0 ? 'text-emerald-400' : 'text-red-400'"
@@ -253,11 +303,17 @@ function betTypeLabel(type: string): string {
             </div>
           </div>
           <div class="bg-neutral-800/60 rounded-lg p-2">
-            <div class="text-neutral-500 text-xs">Wagered</div>
-            <div class="text-neutral-100 font-mono">{{ formatCents(store.sessionStats.totalWagered) }}</div>
+            <div class="text-neutral-500 text-xs">
+              Wagered
+            </div>
+            <div class="text-neutral-100 font-mono">
+              {{ formatCents(store.sessionStats.totalWagered) }}
+            </div>
           </div>
           <div class="bg-neutral-800/60 rounded-lg p-2">
-            <div class="text-neutral-500 text-xs">Points</div>
+            <div class="text-neutral-500 text-xs">
+              Points
+            </div>
             <div class="text-neutral-100 font-mono">
               {{ store.sessionStats.pointsMade }}/{{ store.sessionStats.pointsEstablished }}
             </div>
@@ -266,10 +322,12 @@ function betTypeLabel(type: string): string {
 
         <!-- Roll distribution -->
         <div v-if="store.rollHistory.length > 0">
-          <h4 class="text-neutral-400 text-xs font-medium mb-2">Roll Distribution</h4>
+          <h4 class="text-neutral-400 text-xs font-medium mb-2">
+            Roll Distribution
+          </h4>
           <div class="flex items-end gap-0.5 h-16">
             <div
-              v-for="total in [2,3,4,5,6,7,8,9,10,11,12]"
+              v-for="total in [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]"
               :key="total"
               class="flex-1 flex flex-col items-center"
             >
@@ -289,7 +347,9 @@ function betTypeLabel(type: string): string {
 
         <!-- Insights -->
         <div v-if="insights.length > 0">
-          <h4 class="text-neutral-400 text-xs font-medium mb-2">Insights</h4>
+          <h4 class="text-neutral-400 text-xs font-medium mb-2">
+            Insights
+          </h4>
           <div class="space-y-2">
             <div
               v-for="(insight, i) in insights"
@@ -303,7 +363,9 @@ function betTypeLabel(type: string): string {
 
         <!-- Recent rolls -->
         <div v-if="store.rollHistory.length > 0">
-          <h4 class="text-neutral-400 text-xs font-medium mb-2">Last 20 Rolls</h4>
+          <h4 class="text-neutral-400 text-xs font-medium mb-2">
+            Last 20 Rolls
+          </h4>
           <div class="flex flex-wrap gap-1">
             <span
               v-for="(roll, i) in store.rollHistory.slice(0, 20)"
@@ -313,7 +375,7 @@ function betTypeLabel(type: string): string {
                 'bg-red-900/60 text-red-300': roll.total === 7,
                 'bg-emerald-900/60 text-emerald-300': roll.total === 11 || (store.point && roll.total === store.point),
                 'bg-amber-900/60 text-amber-300': roll.total === 2 || roll.total === 3 || roll.total === 12,
-                'bg-neutral-800 text-neutral-300': ![2,3,7,11,12].includes(roll.total) && roll.total !== store.point
+                'bg-neutral-800 text-neutral-300': ![2, 3, 7, 11, 12].includes(roll.total) && roll.total !== store.point
               }"
             >
               {{ roll.total }}
@@ -323,10 +385,15 @@ function betTypeLabel(type: string): string {
       </div>
 
       <!-- BETS TAB -->
-      <div v-if="activeTab === 'bets'" class="p-3 space-y-3">
+      <div
+        v-if="activeTab === 'bets'"
+        class="p-3 space-y-3"
+      >
         <!-- Active bets -->
         <div v-if="store.activeBets.filter(b => b.owner === 'hero' && b.status !== 'resolved').length > 0">
-          <h4 class="text-neutral-400 text-xs font-medium mb-2">Your Active Bets</h4>
+          <h4 class="text-neutral-400 text-xs font-medium mb-2">
+            Your Active Bets
+          </h4>
           <div class="space-y-1">
             <div
               v-for="bet in store.activeBets.filter(b => b.owner === 'hero' && b.status !== 'resolved')"
@@ -335,7 +402,10 @@ function betTypeLabel(type: string): string {
             >
               <div class="flex items-center gap-2">
                 <span class="text-neutral-200 text-xs font-medium">{{ betTypeLabel(bet.type) }}</span>
-                <span v-if="bet.pointNumber" class="text-neutral-500 text-xs">({{ bet.pointNumber }})</span>
+                <span
+                  v-if="bet.pointNumber"
+                  class="text-neutral-500 text-xs"
+                >({{ bet.pointNumber }})</span>
                 <span
                   v-if="!bet.isWorking"
                   class="text-[9px] bg-neutral-700 text-neutral-400 px-1 rounded"
@@ -345,13 +415,18 @@ function betTypeLabel(type: string): string {
             </div>
           </div>
         </div>
-        <div v-else class="text-neutral-500 text-xs italic py-2 text-center">
+        <div
+          v-else
+          class="text-neutral-500 text-xs italic py-2 text-center"
+        >
           No active bets
         </div>
 
         <!-- Bet type performance -->
         <div v-if="betStatsEntries.length > 0">
-          <h4 class="text-neutral-400 text-xs font-medium mb-2">Performance by Bet Type</h4>
+          <h4 class="text-neutral-400 text-xs font-medium mb-2">
+            Performance by Bet Type
+          </h4>
           <div class="space-y-1">
             <div
               v-for="[type, stats] in betStatsEntries"
@@ -378,7 +453,9 @@ function betTypeLabel(type: string): string {
 
         <!-- Last resolutions -->
         <div v-if="store.lastResolutions.length > 0">
-          <h4 class="text-neutral-400 text-xs font-medium mb-2">Last Roll Results</h4>
+          <h4 class="text-neutral-400 text-xs font-medium mb-2">
+            Last Roll Results
+          </h4>
           <div class="space-y-1">
             <div
               v-for="res in store.lastResolutions.filter(r => r.owner === 'hero')"
@@ -391,9 +468,18 @@ function betTypeLabel(type: string): string {
               }"
             >
               <span>{{ res.description }}</span>
-              <span v-if="res.outcome === 'win'" class="font-mono">+{{ formatCents(res.netGain) }}</span>
-              <span v-else-if="res.outcome === 'lose'" class="font-mono">{{ formatCents(res.netGain) }}</span>
-              <span v-else class="font-mono">Push</span>
+              <span
+                v-if="res.outcome === 'win'"
+                class="font-mono"
+              >+{{ formatCents(res.netGain) }}</span>
+              <span
+                v-else-if="res.outcome === 'lose'"
+                class="font-mono"
+              >{{ formatCents(res.netGain) }}</span>
+              <span
+                v-else
+                class="font-mono"
+              >Push</span>
             </div>
           </div>
         </div>

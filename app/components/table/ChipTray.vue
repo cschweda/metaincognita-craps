@@ -4,13 +4,13 @@ const store = useCrapsStore()
 const chipDenominations = computed(() => store.chipDenominations)
 
 const chipColors: Record<number, string> = {
-  100: '#ffffff',    // $1 white
-  500: '#dc2626',    // $5 red
-  2500: '#16a34a',   // $25 green
-  10000: '#1a1a1a',  // $100 black
-  50000: '#7c3aed',  // $500 purple
-  100000: '#ea580c',  // $1000 orange
-  500000: '#6b7280'  // $5000 gray
+  100: '#ffffff', // $1 white
+  500: '#dc2626', // $5 red
+  2500: '#16a34a', // $25 green
+  10000: '#1a1a1a', // $100 black
+  50000: '#7c3aed', // $500 purple
+  100000: '#ea580c', // $1000 orange
+  500000: '#6b7280' // $5000 gray
 }
 
 const chipTextColors: Record<number, string> = {
@@ -52,7 +52,7 @@ function selectChip(value: number) {
         height: '52px',
         backgroundColor: getChipColor(denom),
         color: getTextColor(denom),
-        border: `3px dashed ${store.selectedChipValue === denom ? '#fbbf24' : 'rgba(255,255,255,0.3)'}`,
+        border: `3px dashed ${store.selectedChipValue === denom ? '#fbbf24' : 'rgba(255,255,255,0.3)'}`
       }"
       :aria-label="`Select ${formatCents(denom)} chip`"
       @click="selectChip(denom)"
