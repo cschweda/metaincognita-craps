@@ -296,7 +296,7 @@ function confirmNewGame() {
 }
 
 // ── Sidebar ──
-const showSidebar = ref(true)
+const showSidebar = ref(typeof window !== 'undefined' ? window.innerWidth >= 1024 : true)
 const hero = computed(() => store.hero)
 
 // ── Advisor "DO THIS" handler ──
@@ -324,7 +324,7 @@ function handleAdvisorBet(betType: BetType) {
 <template>
   <div class="table-page flex-1 bg-neutral-950 flex flex-col min-h-0">
     <!-- Top bar -->
-    <header class="flex items-center justify-between px-4 py-2 bg-neutral-900/80 border-b border-neutral-800">
+    <header class="relative z-40 flex flex-wrap items-center justify-between gap-y-1 px-4 py-2 bg-neutral-900/80 border-b border-neutral-800">
       <div class="flex items-center gap-3">
         <span class="text-amber-400 font-bold text-sm">{{ hero?.name ?? 'Player' }}</span>
         <span class="text-neutral-300 font-mono text-sm">
@@ -344,7 +344,7 @@ function handleAdvisorBet(betType: BetType) {
           Shooter: {{ currentShooterName }}
         </span>
       </div>
-      <div class="flex items-center gap-2">
+      <div class="flex flex-wrap items-center gap-2">
         <span class="text-neutral-500 text-xs">Roll #{{ store.rollNumber }}</span>
 
         <!-- Rapid play toggle -->
@@ -503,8 +503,10 @@ function handleAdvisorBet(betType: BetType) {
 
       <!-- Right: stats/advisor sidebar -->
       <aside
-        class="w-80 border-l border-neutral-800 shrink-0 transition-all duration-200 overflow-hidden min-h-0"
-        :class="showSidebar ? 'max-w-80' : 'max-w-0 border-l-0'"
+        class="border-l border-neutral-800 shrink-0 transition-all duration-200 overflow-hidden min-h-0
+               fixed inset-y-0 right-0 z-30 w-80 max-w-[85vw] bg-neutral-950
+               lg:static lg:z-auto lg:bg-transparent lg:w-80"
+        :class="showSidebar ? 'translate-x-0 lg:max-w-80' : 'translate-x-full lg:translate-x-0 lg:max-w-0 lg:border-l-0'"
       >
         <StatsAdvisorPanel @advisor-bet="handleAdvisorBet" />
       </aside>
