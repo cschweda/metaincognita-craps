@@ -1,15 +1,13 @@
 name: ci
 
-on: push
+on:
+  push:
+    branches: [main]
+  pull_request:
 
 jobs:
   ci:
-    runs-on: ${{ matrix.os }}
-
-    strategy:
-      matrix:
-        os: [ubuntu-latest]
-        node: [22]
+    runs-on: ubuntu-latest
 
     steps:
       - name: Checkout
@@ -21,7 +19,7 @@ jobs:
       - name: Install node
         uses: actions/setup-node@v6
         with:
-          node-version: ${{ matrix.node }}
+          node-version-file: .nvmrc
           cache: pnpm
 
       - name: Install dependencies
@@ -32,3 +30,9 @@ jobs:
 
       - name: Typecheck
         run: pnpm run typecheck
+
+      - name: Test (coverage-enforced)
+        run: pnpm run test:coverage
+
+      - name: Build
+        run: pnpm run generate
