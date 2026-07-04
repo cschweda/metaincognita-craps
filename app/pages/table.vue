@@ -241,6 +241,16 @@ function onKeydown(e: KeyboardEvent) {
 onMounted(() => window.addEventListener('keydown', onKeydown))
 onUnmounted(() => window.removeEventListener('keydown', onKeydown))
 
+// ── Flush throttled session state on tab close/hide and unmount ──
+function flushSession() {
+  store.saveToLocalStorage()
+}
+onMounted(() => window.addEventListener('pagehide', flushSession))
+onUnmounted(() => {
+  window.removeEventListener('pagehide', flushSession)
+  flushSession()
+})
+
 // ── Shooter info ──
 const currentShooterName = computed(() => {
   const shooter = store.players[store.shooterSeat]

@@ -227,6 +227,9 @@ export const useCrapsStore = defineStore('craps', {
         // loses: wager already deducted on placement
 
         player.bankrollHistory.push(player.bankroll)
+        if (player.bankrollHistory.length > crapsConfig.stats.bankrollHistorySize) {
+          player.bankrollHistory.splice(0, player.bankrollHistory.length - crapsConfig.stats.bankrollHistorySize)
+        }
         if (player.bankroll <= 0) {
           player.isBusted = true
         }

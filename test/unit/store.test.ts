@@ -3,6 +3,7 @@ import { setActivePinia, createPinia } from 'pinia'
 import { useCrapsStore } from '../../app/stores/craps'
 import { generateBetId } from '../../app/utils/betTypes'
 import type { ActiveBet } from '../../app/utils/betTypes'
+import { crapsConfig } from '../../craps.config'
 
 // Minimal localStorage stub for the node environment
 const storage = new Map<string, string>()
@@ -96,5 +97,21 @@ describe('bet id continuity across reload', () => {
     const newId = generateBetId()
     expect(fresh.activeBets.map(b => b.id)).not.toContain(newId)
     expect(newId).toBe('bet-8')
+  })
+})
+
+describe('bankroll history cap', () => {
+  it('trims per-player history to stats.bankrollHistorySize', () => {
+    const store = initStore()
+    const cap = crapsConfig.stats.bankrollHistorySize
+    for (let i = 0; i < cap + 50; i++) {
+      const bet = makeBet({ type: 'field', amount: 100 })
+      store.addBet(bet)
+      store.applyResolutions([{
+        betId: bet.id, betType: 'field', owner: 'hero',
+        outcome: 'lose', payout: 0, netGain: -100, description: 'x'
+      }])
+    }
+    expect(store.hero!.bankrollHistory.length).toBeLessThanOrEqual(cap)
   })
 })

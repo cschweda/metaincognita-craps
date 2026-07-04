@@ -176,8 +176,11 @@ export function useGameLoop() {
       }
     }
 
-    // 12. Save state
-    store.saveToLocalStorage()
+    // 12. Persist (throttled: every 10th roll and on seven-out; table.vue
+    // flushes on pagehide/unmount so at most ~9 rolls are ever at risk)
+    if (store.rollNumber % 10 === 0 || newPhase === 'SEVEN_OUT') {
+      store.saveToLocalStorage()
+    }
 
     return {
       roll,
