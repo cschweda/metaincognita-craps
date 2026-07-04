@@ -32,7 +32,7 @@ function getTextColor(cents: number): string {
 }
 
 function selectChip(value: number) {
-  store.selectedChipValue = value
+  store.setSelectedChip(value)
 }
 </script>
 
@@ -42,7 +42,7 @@ function selectChip(value: number) {
     <button
       v-for="denom in chipDenominations"
       :key="denom"
-      class="chip-button relative flex items-center justify-center rounded-full transition-all duration-150 hover:scale-110 focus:outline-none"
+      class="chip-button relative flex items-center justify-center rounded-full transition-all duration-150 hover:scale-110 focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-400 focus-visible:ring-offset-2 focus-visible:ring-offset-neutral-900"
       :class="{
         'ring-2 ring-amber-400 ring-offset-2 ring-offset-neutral-900 scale-110 shadow-lg': store.selectedChipValue === denom,
         'shadow-md hover:shadow-lg': store.selectedChipValue !== denom

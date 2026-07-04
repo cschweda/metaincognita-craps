@@ -81,7 +81,7 @@ const sessionStats = computed(() => store.sessionStats)
           >
             <div
               v-for="(roll, i) in rollHistory"
-              :key="i"
+              :key="store.rollNumber - i"
               class="flex items-center justify-between px-5 py-2 text-sm hover:bg-neutral-800/30"
             >
               <div class="flex items-center gap-3">

@@ -155,7 +155,7 @@ function betTypeLabel(type: string): string {
         </div>
         <div
           v-for="(rec, i) in recommendations"
-          :key="i"
+          :key="`${i}-${rec.action}`"
           class="rounded-lg border p-3"
           :class="priorityBorder(rec.priority)"
         >
@@ -352,8 +352,8 @@ function betTypeLabel(type: string): string {
           </h4>
           <div class="space-y-2">
             <div
-              v-for="(insight, i) in insights"
-              :key="i"
+              v-for="insight in insights"
+              :key="insight"
               class="text-neutral-300 text-xs bg-neutral-800/40 rounded p-2 leading-relaxed"
             >
               {{ insight }}
@@ -369,7 +369,7 @@ function betTypeLabel(type: string): string {
           <div class="flex flex-wrap gap-1">
             <span
               v-for="(roll, i) in store.rollHistory.slice(0, 20)"
-              :key="i"
+              :key="store.rollNumber - i"
               class="inline-flex items-center justify-center w-7 h-6 rounded text-xs font-mono font-bold"
               :class="{
                 'bg-red-900/60 text-red-300': roll.total === 7,

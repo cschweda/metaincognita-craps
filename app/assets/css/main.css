@@ -16,3 +16,14 @@
   --color-green-900: #0A5331;
   --color-green-950: #052E16;
 }
+
+/* Respect OS-level reduced-motion: freeze all animation/transitions */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

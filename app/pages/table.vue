@@ -3,11 +3,13 @@ import type { BetType } from '~/utils/betTypes'
 import { BET_TYPE_TO_ZONE } from '~/utils/betTypes'
 import { crapsConfig } from '~~/craps.config'
 import { rollDice } from '~/engine/rng'
+import { canRemoveBet } from '~/engine/betting'
 
 const store = useCrapsStore()
 const router = useRouter()
 const { placeBet, validateBet, removeBet } = useBetManager()
 const { executeRoll } = useGameLoop()
+const toast = useToast()
 
 // ── Zone mapping ──
 const ZONE_TO_BET_TYPE: Record<string, BetType> = {} as Record<string, BetType>
@@ -40,7 +42,6 @@ const rollDelay = computed(() => rapidPlay.value ? 50 : 800)
 // ── Auto-roll ──
 const autoRoll = ref(false)
 const autoRollSpeed = ref(2000) // ms between rolls
-const autoRollTimer = ref<ReturnType<typeof setTimeout> | null>(null)
 const autoRollCountdown = ref(0)
 let autoRollInterval: ReturnType<typeof setInterval> | null = null
 
@@ -62,17 +63,22 @@ function stopAutoRollTimer() {
     clearInterval(autoRollInterval)
     autoRollInterval = null
   }
-  if (autoRollTimer.value) {
-    clearTimeout(autoRollTimer.value)
-    autoRollTimer.value = null
-  }
   autoRollCountdown.value = 0
 }
 
 watch(autoRoll, (on) => {
   if (!on) stopAutoRollTimer()
 })
-onUnmounted(() => stopAutoRollTimer())
+
+// All one-shot timers are tracked so leaving the table cancels them
+const pendingTimers = new Set<ReturnType<typeof setTimeout>>()
+function trackedTimeout(fn: () => void, ms: number) {
+  const id = setTimeout(() => {
+    pendingTimers.delete(id)
+    fn()
+  }, ms)
+  pendingTimers.add(id)
+}
 
 // ── Take-down mode ──
 const takeDownMode = ref(false)
@@ -146,7 +152,14 @@ function handleZoneClick(zoneId: string) {
     const bet = store.activeBets.find(
       b => b.owner === 'hero' && BET_TYPE_TO_ZONE[b.type] === zoneId && b.status !== 'resolved'
     )
-    if (bet) removeBet(bet.id)
+    if (bet) {
+      const removal = canRemoveBet(bet, store.point)
+      if (!removal.allowed) {
+        toast.add({ title: 'Cannot take down', description: removal.reason, color: 'warning' })
+        return
+      }
+      removeBet(bet.id)
+    }
     return
   }
   const betType = ZONE_TO_BET_TYPE[zoneId]
@@ -156,7 +169,15 @@ function handleZoneClick(zoneId: string) {
     if (autoRoll.value) stopAutoRollTimer()
     return
   }
-  placeBet(betType, store.selectedChipValue, 'hero')
+  const placed = placeBet(betType, store.selectedChipValue, 'hero')
+  if (!placed) {
+    const validation = validateBet(betType, store.selectedChipValue, 'hero', {
+      phase: store.phase, point: store.point, activeBets: store.activeBets,
+      tableRules: store.tableRules, rollNumber: store.rollNumber,
+      dontBetRemovedThisCycle: store.dontBetRemovedThisCycle
+    })
+    toast.add({ title: 'Bet not placed', description: validation.reason || 'Not available right now', color: 'warning' })
+  }
   // Pause auto-roll when hero interacts
   if (autoRoll.value) stopAutoRollTimer()
 }
@@ -193,10 +214,10 @@ function showPayoutAnimations() {
         ? formatCents(res.netGain)
         : 'Push'
     const x = 300 + (delay * 80) // stagger horizontally
-    setTimeout(() => {
+    trackedTimeout(() => {
       payoutFloaters.value.push({ id, text, type: res.outcome as 'win' | 'lose' | 'push', x })
       // Remove after animation
-      setTimeout(() => {
+      trackedTimeout(() => {
         payoutFloaters.value = payoutFloaters.value.filter(f => f.id !== id)
       }, 1500)
     }, delay * 200)
@@ -216,7 +237,7 @@ function handleRoll() {
   pendingDie2.value = d2
   diceRolling.value = true
 
-  setTimeout(() => {
+  trackedTimeout(() => {
     try {
       executeRoll(d1, d2)
       if (!rapidPlay.value) showPayoutAnimations()
@@ -227,7 +248,7 @@ function handleRoll() {
     }
     // Queue next auto-roll if enabled
     if (autoRoll.value) {
-      setTimeout(() => startAutoRollTimer(), rapidPlay.value ? 100 : 500)
+      trackedTimeout(() => startAutoRollTimer(), rapidPlay.value ? 100 : 500)
     }
   }, rollDelay.value)
 }
@@ -240,14 +261,19 @@ function onKeydown(e: KeyboardEvent) {
   }
 }
 onMounted(() => window.addEventListener('keydown', onKeydown))
-onUnmounted(() => window.removeEventListener('keydown', onKeydown))
 
 // ── Flush throttled session state on tab close/hide and unmount ──
 function flushSession() {
   store.saveToLocalStorage()
 }
 onMounted(() => window.addEventListener('pagehide', flushSession))
+
+// All cleanup on unmount: stop timers, drop listeners, flush session state
 onUnmounted(() => {
+  stopAutoRollTimer()
+  pendingTimers.forEach(t => clearTimeout(t))
+  pendingTimers.clear()
+  window.removeEventListener('keydown', onKeydown)
   window.removeEventListener('pagehide', flushSession)
   flushSession()
 })

@@ -258,6 +258,10 @@ export const useCrapsStore = defineStore('craps', {
       this.stickmanCallType = type
     },
 
+    setSelectedChip(value: number) {
+      this.selectedChipValue = value
+    },
+
     saveToLocalStorage() {
       try {
         const data = {
