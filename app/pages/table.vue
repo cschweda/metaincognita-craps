@@ -2,6 +2,7 @@
 import type { BetType } from '~/utils/betTypes'
 import { BET_TYPE_TO_ZONE } from '~/utils/betTypes'
 import { crapsConfig } from '~~/craps.config'
+import { rollDice } from '~/engine/rng'
 
 const store = useCrapsStore()
 const router = useRouter()
@@ -193,8 +194,7 @@ function handleRoll() {
   // Save bet config before roll (for Same Bet)
   saveCurrentBets()
 
-  const d1 = Math.floor(Math.random() * 6) + 1
-  const d2 = Math.floor(Math.random() * 6) + 1
+  const { die1: d1, die2: d2 } = rollDice()
   pendingDie1.value = d1
   pendingDie2.value = d2
   diceRolling.value = true

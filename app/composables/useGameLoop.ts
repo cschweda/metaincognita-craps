@@ -7,10 +7,10 @@ import {
   transition,
   getStickmanCall
 } from '~/engine/resolution'
+import { rollDice } from '~/engine/rng'
 
 export function useGameLoop() {
   const store = useCrapsStore()
-  const { roll: rollDice } = useDice()
 
   /**
    * Handle point_established resolutions by updating bet state.
