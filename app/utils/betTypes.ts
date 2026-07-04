@@ -54,7 +54,7 @@ export interface BetResolution {
   betId: string
   betType: BetType
   owner: string
-  outcome: 'win' | 'lose' | 'push' | 'no_action' | 'point_established'
+  outcome: 'win' | 'lose' | 'push' | 'point_established'
   payout: number
   netGain: number
   description: string

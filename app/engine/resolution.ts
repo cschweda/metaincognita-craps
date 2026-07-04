@@ -476,7 +476,7 @@ export function makeResolution(
   } else if (outcome === 'lose') {
     netGain = -bet.amount
   }
-  // push and no_action: netGain = 0
+  // push: netGain = 0
   // point_established: netGain = 0
 
   return {

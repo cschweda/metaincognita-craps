@@ -113,15 +113,17 @@ function placeSameBet() {
 }
 
 // ── Disabled zones ──
+const EMPTY_SET = new Set<string>()
+
 const disabledZones = computed(() => {
-  const disabled: string[] = []
+  const disabled = new Set<string>()
   for (const [zoneId, betType] of Object.entries(ZONE_TO_BET_TYPE)) {
     const validation = validateBet(betType, store.selectedChipValue, 'hero', {
       phase: store.phase, point: store.point, activeBets: store.activeBets,
       tableRules: store.tableRules, rollNumber: store.rollNumber,
       dontBetRemovedThisCycle: store.dontBetRemovedThisCycle
     })
-    if (!validation.valid) disabled.push(zoneId)
+    if (!validation.valid) disabled.add(zoneId)
   }
   return disabled
 })
@@ -222,7 +224,6 @@ function handleRoll() {
       pendingDie1.value = null
       pendingDie2.value = null
       diceRolling.value = false
-      store.animating = false
     }
     // Queue next auto-roll if enabled
     if (autoRoll.value) {
@@ -410,7 +411,7 @@ function handleAdvisorBet(betType: BetType) {
           <div class="table-wrapper relative">
             <TableCrapsTable
               :active-bets="store.activeBets"
-              :disabled-zones="takeDownMode ? [] : disabledZones"
+              :disabled-zones="takeDownMode ? EMPTY_SET : disabledZones"
               :puck-state="store.puckState"
               :puck-point="store.point"
               :study-mode="studyMode"

@@ -40,9 +40,9 @@ const phaseBadge = computed(() => {
   return { label: store.phase, color: 'bg-neutral-600' }
 })
 
-const canPlacePass = computed(() => store.phase === 'COME_OUT' && !store.animating)
-const canPlaceCome = computed(() => store.phase === 'POINT_PHASE' && !store.animating)
-const canPlacePlace = computed(() => ['COME_OUT', 'POINT_PHASE'].includes(store.phase) && !store.animating)
+const canPlacePass = computed(() => store.phase === 'COME_OUT')
+const canPlaceCome = computed(() => store.phase === 'POINT_PHASE')
+const canPlacePlace = computed(() => ['COME_OUT', 'POINT_PHASE'].includes(store.phase))
 
 const canPlacePassOdds = computed(() => {
   if (store.phase !== 'POINT_PHASE' || !store.point) return false

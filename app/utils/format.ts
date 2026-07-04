@@ -21,3 +21,10 @@ export function formatSignedCents(cents: number): string {
 export function formatPercent(decimal: number): string {
   return `${(decimal * 100).toFixed(2)}%`
 }
+
+/** Format cents to dollars for chip display ($5, $250, 1.5k) */
+export function formatChipAmount(cents: number): string {
+  const dollars = cents / 100
+  if (dollars >= 1000) return `${(dollars / 1000).toFixed(dollars % 1000 === 0 ? 0 : 1)}k`
+  return `$${dollars}`
+}

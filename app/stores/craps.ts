@@ -7,7 +7,6 @@ export const useCrapsStore = defineStore('craps', {
   state: () => ({
     // Game state
     phase: 'SETUP' as GamePhase,
-    animating: false,
     point: null as number | null,
     puckState: 'OFF' as 'ON' | 'OFF',
     shooterSeat: 0,
@@ -68,7 +67,7 @@ export const useCrapsStore = defineStore('craps', {
     isComingOut: (state): boolean => state.phase === 'COME_OUT',
     isPointPhase: (state): boolean => state.phase === 'POINT_PHASE',
     canPlaceBets: (state): boolean => ['COME_OUT', 'POINT_PHASE', 'BETWEEN_ROLLS'].includes(state.phase),
-    canRoll: (state): boolean => ['COME_OUT', 'POINT_PHASE'].includes(state.phase) && !state.animating,
+    canRoll: (state): boolean => ['COME_OUT', 'POINT_PHASE'].includes(state.phase),
 
     activeBetsForOwner: state => (owner: string): ActiveBet[] => {
       return state.activeBets.filter(b => b.owner === owner && b.status !== 'resolved')
@@ -78,7 +77,6 @@ export const useCrapsStore = defineStore('craps', {
 
     chipDenominations: (state): number[] => {
       const min = state.tableRules.minBet
-      if (min >= 50000) return [2500, 10000, 50000, 100000]
       if (min >= 10000) return [2500, 10000, 50000, 100000]
       if (min >= 2500) return [500, 2500, 10000, 50000]
       if (min >= 1000) return [500, 1000, 2500, 10000]
