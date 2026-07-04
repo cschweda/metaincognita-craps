@@ -5,7 +5,8 @@ import {
   calculateVig,
   applyPayoutRounding,
   calculatePayout,
-  calculateFieldPayout
+  calculateFieldPayout,
+  calculateHornHighPayout
 } from '../../app/engine/payouts'
 
 // ---- Default table rules for testing ----
@@ -155,5 +156,27 @@ describe('Buy bet payout with vig on win', () => {
     // Total = 2000 + 4000 = 6000
     const payout = calculatePayout(bet, rules)
     expect(payout).toBe(6000)
+  })
+})
+
+describe('Horn High payout (2 units on the high number, 1 unit on each other)', () => {
+  // $5 horn high yo (high = 11), unit = 100 cents
+  it('pays the 2-unit portion when the HIGH number hits (roll 11, high 11)', () => {
+    // 2 units returned + applyRatio(200, [15,1]) = 200 + 3000 = 3200
+    expect(calculateHornHighPayout(500, 11, 11)).toBe(3200)
+  })
+
+  it('pays only the 1-unit portion when a LOW number hits (roll 12, high 11)', () => {
+    // 1 unit returned + applyRatio(100, [30,1]) = 100 + 3000 = 3100
+    expect(calculateHornHighPayout(500, 12, 11)).toBe(3100)
+  })
+
+  it('roll 2 with high 2 pays the doubled portion', () => {
+    // 200 + applyRatio(200, [30,1]) = 200 + 6000 = 6200
+    expect(calculateHornHighPayout(500, 2, 2)).toBe(6200)
+  })
+
+  it('non-horn total pays 0', () => {
+    expect(calculateHornHighPayout(500, 7, 11)).toBe(0)
   })
 })

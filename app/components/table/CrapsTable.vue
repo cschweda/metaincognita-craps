@@ -133,7 +133,7 @@ const zoneDescriptions: Record<string, { name: string, desc: string, edge: strin
   'boxcars': { name: 'Boxcars (Midnight)', desc: 'One-roll bet on 12. Pays 30:1. Very rare hit (1 in 36).', edge: '13.89%' },
   'craps-eleven': { name: 'C & E', desc: 'One-roll bet on any craps (2/3/12) or eleven. Pays 3:1 on craps, 7:1 on eleven.', edge: '11.11%' },
   'horn': { name: 'Horn', desc: '4-unit one-roll bet: $1 each on 2, 3, 11, 12. Wins 30:1 or 15:1 minus 3 losing units.', edge: '12.50%' },
-  'horn-high': { name: 'Horn High', desc: '5-unit bet: 4 units as Horn + 1 extra on a chosen number.', edge: '12.50%' },
+  'horn-high': { name: 'Horn High (Yo)', desc: '5-unit one-roll bet: 2 units on 11 (the "high"), 1 unit each on 2, 3, 12. The doubled unit pays only when 11 rolls.', edge: '12.22%' },
   'hop-easy': { name: 'Hop (Easy)', desc: 'One-roll bet on a specific non-pair combo. Pays 15:1.', edge: '11.11%' },
   'hop-hard': { name: 'Hop (Hard)', desc: 'One-roll bet on a specific pair combo. Pays 30:1.', edge: '13.89%' }
 }

@@ -1000,7 +1000,7 @@ describe('calculateHornPayout (direct, stable ratios)', () => {
 
 describe('calculateHornHighPayout (direct — zero-return only, per known-bug constraint)', () => {
   it('returns 0 for a non-horn total', () => {
-    expect(calculateHornHighPayout(1000, 7)).toBe(0)
+    expect(calculateHornHighPayout(1000, 7, 11)).toBe(0)
   })
 })
 

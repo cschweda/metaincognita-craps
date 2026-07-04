@@ -210,21 +210,16 @@ export function calculateHornPayout(totalBet: number, total: number): number {
 }
 
 /**
- * Calculate horn high payout. Horn High is a 5-unit bet: 2 units on the
- * "high" number and 1 unit on each of the other three horn numbers.
- * The high number is determined by the winning total:
- * - If the roll matches one of the horn numbers, that number is treated as high.
- * - This matches how most casinos handle horn high (player calls "horn high yo", etc.)
+ * Horn High is a 5-unit bet: 2 units on the player's chosen "high" number and
+ * 1 unit on each of the other three horn numbers. Only the portion riding on
+ * the rolled number pays; the rest is lost.
  */
-export function calculateHornHighPayout(totalBet: number, total: number): number {
+export function calculateHornHighPayout(totalBet: number, total: number, highNumber: number): number {
   const unitBet = Math.floor(totalBet / 5)
   const ratio = payouts.horn[total]
   if (!ratio) return 0
-  // The winning number always gets the "high" (2-unit) portion
-  const winningUnits = 2
-  const winAmount = applyRatio(unitBet * winningUnits, ratio)
-  // Player gets back the winning portion + winnings. The other 3 units are lost.
-  return (unitBet * winningUnits) + winAmount
+  const stake = total === highNumber ? unitBet * 2 : unitBet
+  return stake + applyRatio(stake, ratio)
 }
 
 /**

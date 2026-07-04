@@ -412,7 +412,7 @@ export function resolveSingleBet(
   // --- HORN HIGH (5-unit bet, 2 units on the high number) ---
   if (type === 'hornHigh') {
     if (total === 2 || total === 3 || total === 11 || total === 12) {
-      const payout = calculateHornHighPayout(amount, total)
+      const payout = calculateHornHighPayout(amount, total, bet.pointNumber ?? 11)
       return makeResolution(bet, 'win', payout, `Horn High wins on ${total}`)
     }
     return makeResolution(bet, 'lose', 0, 'Horn High loses')

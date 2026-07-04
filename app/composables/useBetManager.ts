@@ -247,6 +247,11 @@ export function useBetManager() {
     if (isHardwayBet(type) && betPoint === null) {
       betPoint = betTypeToNumber(type)
     }
+    // Horn High: the "high" number rides on pointNumber. This sim plays the
+    // most common call — horn high yo (11) — unless a number is passed in.
+    if (type === 'hornHigh' && betPoint === null) {
+      betPoint = 11
+    }
 
     const isContract = CONTRACT_BETS.includes(type)
     const isWorking = getDefaultWorking(type, store.phase, store.tableRules)
