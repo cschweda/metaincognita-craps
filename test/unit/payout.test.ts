@@ -6,7 +6,8 @@ import {
   applyPayoutRounding,
   calculatePayout,
   calculateFieldPayout,
-  calculateHornHighPayout
+  calculateHornHighPayout,
+  calculateCEPayout
 } from '../../app/engine/payouts'
 
 // ---- Default table rules for testing ----
@@ -178,5 +179,22 @@ describe('Horn High payout (2 units on the high number, 1 unit on each other)', 
 
   it('non-horn total pays 0', () => {
     expect(calculateHornHighPayout(500, 7, 11)).toBe(0)
+  })
+})
+
+describe('C&E payout (1 unit any-craps at 7:1, 1 unit yo at 15:1)', () => {
+  // $2 C&E → unit = 100 cents. Net on total bet: craps 3:1, eleven 7:1.
+  it('craps roll returns unit + 7:1 (net +600 on 200 = 3:1)', () => {
+    expect(calculateCEPayout(200, 2)).toBe(800)
+    expect(calculateCEPayout(200, 3)).toBe(800)
+    expect(calculateCEPayout(200, 12)).toBe(800)
+  })
+
+  it('eleven returns unit + 15:1 (net +1400 on 200 = 7:1)', () => {
+    expect(calculateCEPayout(200, 11)).toBe(1600)
+  })
+
+  it('any other total pays 0', () => {
+    expect(calculateCEPayout(200, 7)).toBe(0)
   })
 })

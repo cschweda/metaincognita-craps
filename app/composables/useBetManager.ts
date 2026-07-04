@@ -166,17 +166,15 @@ export function useBetManager() {
       }
     }
 
-    // Horn must be divisible by 4
-    if (type === 'horn' && amount % 4 !== 0) {
-      return { valid: false, reason: 'Horn bet must be divisible by 4' }
+    // Multi-unit prop bets must be placed in whole-dollar unit multiples
+    if (type === 'horn' && amount % 400 !== 0) {
+      return { valid: false, reason: 'Horn is a 4-unit bet — use a multiple of $4' }
     }
-    // Horn High must be divisible by 5
-    if (type === 'hornHigh' && amount % 5 !== 0) {
-      return { valid: false, reason: 'Horn High bet must be divisible by 5' }
+    if (type === 'hornHigh' && amount % 500 !== 0) {
+      return { valid: false, reason: 'Horn High is a 5-unit bet — use a multiple of $5' }
     }
-    // C&E must be divisible by 2
-    if (type === 'crapsEleven' && amount % 2 !== 0) {
-      return { valid: false, reason: 'C&E bet must be divisible by 2' }
+    if (type === 'crapsEleven' && amount % 200 !== 0) {
+      return { valid: false, reason: 'C&E is a 2-unit bet — use a multiple of $2' }
     }
 
     // Bankroll check
