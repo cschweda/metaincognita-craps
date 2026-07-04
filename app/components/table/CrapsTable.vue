@@ -91,9 +91,11 @@ function zoneAriaLabel(zoneId: string): string {
 /** Delegated keyboard activation for betting zones (Enter / Space). */
 function handleZoneKeydown(event: KeyboardEvent) {
   if (event.key !== 'Enter' && event.key !== ' ') return
+  if (event.repeat) return
   const zoneEl = (event.target as Element)?.closest?.('.zone')
   if (!zoneEl?.id) return
   event.preventDefault()
+  event.stopPropagation()
   handleZoneClick(zoneEl.id)
 }
 

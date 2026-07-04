@@ -459,7 +459,14 @@ export function useAdvisor() {
       })
     }
 
-    return recs
+    const seen = new Set<string>()
+    const deduped = recs.filter((r) => {
+      const key = `${r.action}-${r.detail.join('|')}`
+      if (seen.has(key)) return false
+      seen.add(key)
+      return true
+    })
+    return deduped
   }
 
   function buildResultParagraphs(

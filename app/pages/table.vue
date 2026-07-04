@@ -137,7 +137,7 @@ const disabledZones = computed(() => {
 // ── Hop bet target picker ──
 const hopPicker = ref<{ open: boolean, type: 'hopEasy' | 'hopHard' }>({ open: false, type: 'hopHard' })
 const hopTargets = computed(() =>
-  hopPicker.value.type === 'hopHard' ? [4, 6, 8, 10] : [3, 4, 5, 6, 7, 8, 9, 10, 11]
+  hopPicker.value.type === 'hopHard' ? [4, 6, 8, 10] : [3, 4, 10, 11]
 )
 function placeHopBet(target: number) {
   hopPicker.value.open = false
@@ -255,6 +255,7 @@ function handleRoll() {
 
 // ── Keyboard: spacebar to roll ──
 function onKeydown(e: KeyboardEvent) {
+  if (e.target !== document.body) return
   if (e.code === 'Space' && canRoll.value && !diceRolling.value) {
     e.preventDefault()
     handleRoll()

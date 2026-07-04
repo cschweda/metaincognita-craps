@@ -260,8 +260,8 @@ export function useBetManager() {
       console.warn('Hop hard target must be 4, 6, 8, or 10')
       return null
     }
-    if (type === 'hopEasy' && betPoint !== null && (betPoint < 3 || betPoint > 11)) {
-      console.warn('Hop easy target must be between 3 and 11')
+    if (type === 'hopEasy' && betPoint !== null && ![3, 4, 10, 11].includes(betPoint)) {
+      console.warn('Hop easy target must be 3, 4, 10, or 11')
       return null
     }
 
