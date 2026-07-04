@@ -299,3 +299,23 @@ describe('resolveRoll – working status (OFF bets take no action)', () => {
     expect(res[0]!.outcome).toBe('win')
   })
 })
+
+describe('resolveRoll – Horn High differential payout', () => {
+  it('$5 horn high yo: low number 3 pays only the 1-unit portion', () => {
+    const bet = makeBet({ type: 'hornHigh', amount: 500, pointNumber: 11 })
+    const res = resolveRoll(makeRoll(1, 2), [bet], 'POINT_PHASE', defaultTableRules, 6)
+    const r = findResolution(res, bet.id)!
+    expect(r.outcome).toBe('win')
+    // unit = 100; low hit stake = 1 unit; 100 + applyRatio(100, [15,1]) = 1600
+    expect(r.payout).toBe(1600)
+  })
+
+  it('$5 horn high yo: the high number 11 pays the 2-unit portion', () => {
+    const bet = makeBet({ type: 'hornHigh', amount: 500, pointNumber: 11 })
+    const res = resolveRoll(makeRoll(5, 6), [bet], 'POINT_PHASE', defaultTableRules, 6)
+    const r = findResolution(res, bet.id)!
+    expect(r.outcome).toBe('win')
+    // high hit stake = 2 units; 200 + applyRatio(200, [15,1]) = 3200
+    expect(r.payout).toBe(3200)
+  })
+})

@@ -767,11 +767,11 @@ describe('resolveRoll – Horn', () => {
 })
 
 // ---------------------------------------------------------------------------
-// Horn High — calculateHornHighPayout currently overpays because it always
-// credits the 2-unit "high" portion to whichever number hits (a later task
-// changes its signature to (totalBet, total, highNumber) and its math). Only
-// test resolution routing (win/lose) and the zero-return for non-horn
-// totals — never assert exact hornHigh payout amounts here.
+// Horn High — calculateHornHighPayout correctly computes payouts:
+// signature (totalBet, total, highNumber) allocates the 2-unit portion only
+// to the high number hit. This describe block tests resolution routing
+// (win/lose) and the zero-return for non-horn totals. Exact payout tests
+// live in payout.test.ts; end-to-end differential tests in resolver.test.ts.
 // ---------------------------------------------------------------------------
 
 describe('resolveRoll – Horn High (routing only, no exact payout amounts)', () => {
@@ -998,7 +998,7 @@ describe('calculateHornPayout (direct, stable ratios)', () => {
   })
 })
 
-describe('calculateHornHighPayout (direct — zero-return only, per known-bug constraint)', () => {
+describe('calculateHornHighPayout (direct)', () => {
   it('returns 0 for a non-horn total', () => {
     expect(calculateHornHighPayout(1000, 7, 11)).toBe(0)
   })
