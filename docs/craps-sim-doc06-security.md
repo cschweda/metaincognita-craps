@@ -91,11 +91,11 @@ function sanitizeName(input: string): string {
 **Threat:** A malicious update to Nuxt, Nuxt UI, or a transitive dependency injects code into the build.
 
 **Blue Team Response:**
-- **`yarn.lock` pinning:** The lockfile pins exact dependency versions. Always commit `yarn.lock`. Never run `yarn upgrade` without reviewing the diff.
+- **`pnpm-lock.yaml` pinning:** The lockfile pins exact dependency versions. Always commit `pnpm-lock.yaml`. Never run `pnpm update` without reviewing the diff.
 - **Minimal dependencies.** Direct dependencies: Nuxt, Nuxt UI, Pinia (bundled with Nuxt). Fewer packages = smaller attack surface.
-- **Frozen lockfile in CI:** The Netlify build runs `yarn install --frozen-lockfile`, which refuses to install if the lockfile doesn't match `package.json`. This prevents silent dependency changes during deployment.
+- **Frozen lockfile in CI:** The Netlify build runs `pnpm install --frozen-lockfile`, which refuses to install if the lockfile doesn't match `package.json`. This prevents silent dependency changes during deployment.
 - **No CDN script tags.** All code is bundled at build time. Zero runtime loading of external scripts.
-- **Periodic audit:** Run `yarn audit` before each phase build. Address critical/high vulnerabilities before deploying.
+- **Periodic audit:** Run `pnpm audit` before each phase build. Address critical/high vulnerabilities before deploying.
 
 ### 5. Netlify Deployment Security (Red Team: Compromised Deploy)
 
@@ -105,7 +105,7 @@ function sanitizeName(input: string): string {
 - **GitHub branch protection.** Require PR reviews for merges to `main`.
 - **Netlify deploy previews.** Every PR generates a preview deploy. Review before merge.
 - **No environment variables with secrets.** The SPA has zero secrets — no API keys, no tokens, no server-side config. Everything is public client-side code. There is nothing to steal from the build environment.
-- **Content Security Policy (CSP).** Restrict script sources via `netlify.toml` headers:
+- **Content Security Policy (CSP).** Restrict script/style/connect sources via `netlify.toml` headers:
 
 ```toml
 [[headers]]
@@ -114,10 +114,12 @@ function sanitizeName(input: string): string {
     X-Frame-Options = "DENY"
     X-Content-Type-Options = "nosniff"
     Referrer-Policy = "strict-origin-when-cross-origin"
-    Content-Security-Policy = "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self' data:"
+    Strict-Transport-Security = "max-age=31536000; includeSubDomains"
+    Permissions-Policy = "camera=(), microphone=(), geolocation=()"
+    Content-Security-Policy = "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self' data:; connect-src 'self'; object-src 'none'; base-uri 'self'; form-action 'none'; frame-ancestors 'none'"
 ```
 
-Note: `'unsafe-inline'` for styles is required by Tailwind CSS. If Tailwind is fully compiled at build time (expected with Nuxt 4), this can be tightened to `'self'` only.
+Note: `script-src` and `style-src` both carry `'unsafe-inline'`. Nuxt's SPA-mode bootstrap emits an inline `<script>` to hydrate the app shell, and a static host (no server per-request) cannot mint CSP nonces to allow that script selectively — so `'unsafe-inline'` is accepted for `script-src` and documented here rather than silently tightened and broken. (`'unsafe-inline'` for `style-src` remains required by Tailwind's runtime-injected styles.) `connect-src 'self'` is satisfiable because both icon collections (`@iconify-json/lucide`, `@iconify-json/simple-icons`) are bundled into the client build and all web fonts are self-hosted under `/_fonts/` — no runtime requests to `api.iconify.design` or `fonts.gstatic.com` are needed. `object-src 'none'`, `base-uri 'self'`, `form-action 'none'`, and `frame-ancestors 'none'` close off plugin embedding, `<base>` hijacking, form hijacking, and iframe embedding respectively. HSTS (`Strict-Transport-Security`) and `Permissions-Policy` (camera/microphone/geolocation all denied — the app uses none of them) round out the header set. The future tightening path for `script-src` is a hash-based or nonce-based CSP via the `nuxt-security` module, which can compute per-build script hashes at generate time; this was deferred to keep the static-hosting deploy simple, since the current policy still blocks arbitrary third-party script injection (the actual XSS-relevant threat — see the "No `v-html`" rule) and does not weaken `object-src`, `frame-ancestors`, or `connect-src`.
 
 ### 6. Clickjacking (Red Team: Iframe Embedding)
 
@@ -183,6 +185,6 @@ These security rules apply to every phase build:
 2. **No CDN scripts.** All code bundled at build time.
 3. **No URL-based state.** State lives in Pinia and localStorage only.
 4. **No secrets.** The SPA has zero environment variables with sensitive values.
-5. **Commit `yarn.lock`.** Build with `--frozen-lockfile`.
+5. **Commit `pnpm-lock.yaml`.** Build with `--frozen-lockfile`.
 6. **Integer cents.** All money as integers. No floating-point currency.
 7. **Sanitize input.** The hero name is the only user-supplied text. Sanitize it.

@@ -2,6 +2,31 @@
 
 All notable changes to this project will be documented in this file.
 
+## [Unreleased]
+
+### Bug Fixes
+- **Contract bet takedown**: Pass Line / Come bets could previously be removed via Take-Down mode even after a point was established. Now locked once a point is on, per MBS 3.7.
+- **Working toggle honored in point phase**: Toggling a bet OFF previously had no effect once the point phase started (the toggle was inert). Bet working status is now correctly honored during point phase.
+- **Seven-out returns OFF bets**: OFF Place/Buy/Hardways bets were being swept as losses on seven-out. They are now correctly returned to the player instead.
+- **Horn High payout**: Was paying the doubled "high" portion regardless of which number actually rolled. Now pays the doubled unit only when the designated high number hits, and the single-unit payout otherwise.
+- **C&E payout**: The payout configuration was underpaying both legs. Corrected to 7:1 on the Any Craps unit and 15:1 on the Yo unit.
+- **Hop bets can win**: Hop Easy/Hop Hard bets had no assigned target number and could never resolve as a win. Added a target-number picker so hop bets place and pay against a real target.
+
+### Accessibility
+- **Keyboard-operable betting zones**: All ~40 table betting zones are reachable and actionable via keyboard (Tab, Enter/Space), with ARIA labels and visible focus rings.
+- **Reduced motion support**: Dice, chip, and payout animations respect the OS-level `prefers-reduced-motion` setting.
+- **Rejection toasts**: Invalid bet attempts (wrong phase, bankroll too low, etc.) now surface a toast explaining why, instead of silently failing.
+
+### Performance
+- **Rapid-mode history cap**: Per-player bankroll history is capped and localStorage writes are throttled (with a flush on navigating away), preventing slowdowns and excessive writes during rapid-fire rolling.
+
+### Layout
+- **Responsive table page**: Header and chip tray wrap instead of overflowing horizontally down to 390px-wide viewports; the stats/advisor sidebar collapses into a drawer below the `lg` breakpoint.
+
+### Deploy & Security
+- **Hardened `netlify.toml`**: Added HSTS (`Strict-Transport-Security`), `Permissions-Policy` (camera/microphone/geolocation denied), and a tightened CSP (`base-uri`, `form-action`, `frame-ancestors`, and `object-src` all locked down). Hashed `/_nuxt/*` assets are served with immutable caching. The Netlify build now runs `pnpm typecheck` before `pnpm generate`, failing the deploy on type errors.
+- **Icons pinned to the local bundle**: All app icons (`@iconify-json/lucide`, `@iconify-json/simple-icons`) are bundled at build time — the app no longer depends on the Iconify API at runtime, so `connect-src` no longer needs an external allowance. Fonts remain fully self-hosted.
+
 ## [0.3.0] - 2026-04-04
 
 ### Screenshots

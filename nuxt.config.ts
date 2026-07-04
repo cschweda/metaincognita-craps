@@ -32,5 +32,16 @@ export default defineNuxtConfig({
         braceStyle: '1tbs'
       }
     }
+  },
+
+  icon: {
+    provider: 'none',
+    clientBundle: {
+      // Nuxt UI's <USelect>/<UCombobox> use lucide:check internally for the
+      // selected-item indicator; it isn't a literal string in our own
+      // source, so static `scan` can't discover it — list it explicitly.
+      icons: ['lucide:check'],
+      scan: true
+    }
   }
 })
