@@ -82,3 +82,19 @@ describe('craps store', () => {
     expect(fresh.activeBets).toHaveLength(1)
   })
 })
+
+describe('bet id continuity across reload', () => {
+  it('new bet ids never collide with restored ones', () => {
+    const store = initStore()
+    store.addBet(makeBet({ id: 'bet-1' }))
+    store.addBet(makeBet({ id: 'bet-7', type: 'field' }))
+    store.saveToLocalStorage()
+
+    setActivePinia(createPinia())
+    const fresh = useCrapsStore()
+    fresh.loadFromLocalStorage()
+    const newId = generateBetId()
+    expect(fresh.activeBets.map(b => b.id)).not.toContain(newId)
+    expect(newId).toBe('bet-8')
+  })
+})

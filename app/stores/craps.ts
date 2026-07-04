@@ -1,5 +1,6 @@
 import { defineStore } from 'pinia'
 import type { GamePhase, DiceRoll, ActiveBet, BetResolution, TableRules, PlayerState, SessionStats } from '~/utils/betTypes'
+import { resetBetIdCounter, syncBetIdCounter } from '~/utils/betTypes'
 import { crapsConfig } from '~~/craps.config'
 
 export const useCrapsStore = defineStore('craps', {
@@ -136,6 +137,7 @@ export const useCrapsStore = defineStore('craps', {
       this.shooterRollCount = 0
       this.shooterSeat = 0
       this.activeBets = []
+      resetBetIdCounter()
       this.lastResolutions = []
       this.currentRoll = null
       this.rollHistory = []
@@ -296,6 +298,7 @@ export const useCrapsStore = defineStore('craps', {
         this.currentRoll = data.currentRoll
         this.rollHistory = data.rollHistory ?? []
         this.activeBets = data.activeBets ?? []
+        syncBetIdCounter(this.activeBets.map((b: ActiveBet) => b.id))
         this.tableRules = data.tableRules
         this.players = data.players
         this.sessionStats = data.sessionStats

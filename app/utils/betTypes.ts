@@ -193,3 +193,13 @@ export function generateBetId(): string {
 export function resetBetIdCounter(): void {
   nextBetId = 1
 }
+
+/** After restoring persisted bets, advance the counter past every restored id. */
+export function syncBetIdCounter(existingIds: string[]): void {
+  let max = 0
+  for (const id of existingIds) {
+    const m = id.match(/^bet-(\d+)$/)
+    if (m) max = Math.max(max, parseInt(m[1]!))
+  }
+  nextBetId = Math.max(nextBetId, max + 1)
+}
