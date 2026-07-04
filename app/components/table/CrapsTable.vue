@@ -82,6 +82,21 @@ function zoneBetTotal(zoneId: string): number {
   return zoneTotals.value.get(zoneId) ?? 0
 }
 
+function zoneAriaLabel(zoneId: string): string {
+  const name = zoneDescriptions[zoneId]?.name ?? zoneId
+  const total = zoneBetTotal(zoneId)
+  return total > 0 ? `${name}, ${formatChipAmount(total)} bet placed` : name
+}
+
+/** Delegated keyboard activation for betting zones (Enter / Space). */
+function handleZoneKeydown(event: KeyboardEvent) {
+  if (event.key !== 'Enter' && event.key !== ' ') return
+  const zoneEl = (event.target as Element)?.closest?.('.zone')
+  if (!zoneEl?.id) return
+  event.preventDefault()
+  handleZoneClick(zoneEl.id)
+}
+
 /** Puck x position based on point number */
 const puckPositions: Record<number, number> = {
   4: 155,
@@ -115,9 +130,11 @@ const puckY = computed(() => {
       xmlns="http://www.w3.org/2000/svg"
       class="craps-table w-full h-auto select-none"
       :class="{ 'study-mode': studyMode }"
+      role="group"
       :aria-label="'Craps table'"
       @mousemove="handleStudyMouseMove"
       @mouseleave="handleStudyMouseLeave"
+      @keydown="handleZoneKeydown"
     >
       <defs>
         <!-- Slight transparency fill for zone interactivity -->
@@ -191,6 +208,10 @@ const puckY = computed(() => {
           id="place-4"
           class="zone"
           :class="{ disabled: isDisabled('place-4') }"
+          role="button"
+          :tabindex="isDisabled('place-4') ? -1 : 0"
+          :aria-label="zoneAriaLabel('place-4')"
+          :aria-disabled="isDisabled('place-4') || undefined"
           @click="handleZoneClick('place-4')"
         >
           <rect
@@ -218,6 +239,10 @@ const puckY = computed(() => {
           id="place-5"
           class="zone"
           :class="{ disabled: isDisabled('place-5') }"
+          role="button"
+          :tabindex="isDisabled('place-5') ? -1 : 0"
+          :aria-label="zoneAriaLabel('place-5')"
+          :aria-disabled="isDisabled('place-5') || undefined"
           @click="handleZoneClick('place-5')"
         >
           <rect
@@ -245,6 +270,10 @@ const puckY = computed(() => {
           id="place-six"
           class="zone"
           :class="{ disabled: isDisabled('place-six') }"
+          role="button"
+          :tabindex="isDisabled('place-six') ? -1 : 0"
+          :aria-label="zoneAriaLabel('place-six')"
+          :aria-disabled="isDisabled('place-six') || undefined"
           @click="handleZoneClick('place-six')"
         >
           <rect
@@ -272,6 +301,10 @@ const puckY = computed(() => {
           id="place-8"
           class="zone"
           :class="{ disabled: isDisabled('place-8') }"
+          role="button"
+          :tabindex="isDisabled('place-8') ? -1 : 0"
+          :aria-label="zoneAriaLabel('place-8')"
+          :aria-disabled="isDisabled('place-8') || undefined"
           @click="handleZoneClick('place-8')"
         >
           <rect
@@ -299,6 +332,10 @@ const puckY = computed(() => {
           id="place-nine"
           class="zone"
           :class="{ disabled: isDisabled('place-nine') }"
+          role="button"
+          :tabindex="isDisabled('place-nine') ? -1 : 0"
+          :aria-label="zoneAriaLabel('place-nine')"
+          :aria-disabled="isDisabled('place-nine') || undefined"
           @click="handleZoneClick('place-nine')"
         >
           <rect
@@ -326,6 +363,10 @@ const puckY = computed(() => {
           id="place-10"
           class="zone"
           :class="{ disabled: isDisabled('place-10') }"
+          role="button"
+          :tabindex="isDisabled('place-10') ? -1 : 0"
+          :aria-label="zoneAriaLabel('place-10')"
+          :aria-disabled="isDisabled('place-10') || undefined"
           @click="handleZoneClick('place-10')"
         >
           <rect
@@ -355,6 +396,10 @@ const puckY = computed(() => {
           id="big-6"
           class="zone"
           :class="{ disabled: isDisabled('big-6') }"
+          role="button"
+          :tabindex="isDisabled('big-6') ? -1 : 0"
+          :aria-label="zoneAriaLabel('big-6')"
+          :aria-disabled="isDisabled('big-6') || undefined"
           @click="handleZoneClick('big-6')"
         >
           <rect
@@ -375,6 +420,10 @@ const puckY = computed(() => {
           id="big-8"
           class="zone"
           :class="{ disabled: isDisabled('big-8') }"
+          role="button"
+          :tabindex="isDisabled('big-8') ? -1 : 0"
+          :aria-label="zoneAriaLabel('big-8')"
+          :aria-disabled="isDisabled('big-8') || undefined"
           @click="handleZoneClick('big-8')"
         >
           <rect
@@ -398,6 +447,10 @@ const puckY = computed(() => {
         id="dont-come"
         class="zone"
         :class="{ disabled: isDisabled('dont-come') }"
+        role="button"
+        :tabindex="isDisabled('dont-come') ? -1 : 0"
+        :aria-label="zoneAriaLabel('dont-come')"
+        :aria-disabled="isDisabled('dont-come') || undefined"
         @click="handleZoneClick('dont-come')"
       >
         <rect
@@ -420,6 +473,10 @@ const puckY = computed(() => {
         id="come"
         class="zone"
         :class="{ disabled: isDisabled('come') }"
+        role="button"
+        :tabindex="isDisabled('come') ? -1 : 0"
+        :aria-label="zoneAriaLabel('come')"
+        :aria-disabled="isDisabled('come') || undefined"
         @click="handleZoneClick('come')"
       >
         <rect
@@ -442,6 +499,10 @@ const puckY = computed(() => {
         id="field"
         class="zone"
         :class="{ disabled: isDisabled('field') }"
+        role="button"
+        :tabindex="isDisabled('field') ? -1 : 0"
+        :aria-label="zoneAriaLabel('field')"
+        :aria-disabled="isDisabled('field') || undefined"
         @click="handleZoneClick('field')"
       >
         <rect
@@ -491,6 +552,10 @@ const puckY = computed(() => {
         id="dont-pass"
         class="zone"
         :class="{ disabled: isDisabled('dont-pass') }"
+        role="button"
+        :tabindex="isDisabled('dont-pass') ? -1 : 0"
+        :aria-label="zoneAriaLabel('dont-pass')"
+        :aria-disabled="isDisabled('dont-pass') || undefined"
         @click="handleZoneClick('dont-pass')"
       >
         <rect
@@ -518,6 +583,10 @@ const puckY = computed(() => {
         id="pass-line"
         class="zone"
         :class="{ disabled: isDisabled('pass-line') }"
+        role="button"
+        :tabindex="isDisabled('pass-line') ? -1 : 0"
+        :aria-label="zoneAriaLabel('pass-line')"
+        :aria-disabled="isDisabled('pass-line') || undefined"
         @click="handleZoneClick('pass-line')"
       >
         <!-- Bottom horizontal strip -->
@@ -539,6 +608,10 @@ const puckY = computed(() => {
         id="pass-odds"
         class="zone"
         :class="{ 'disabled': isDisabled('pass-odds'), 'odds-available': !isDisabled('pass-odds') && zoneBetTotal('pass-odds') === 0 }"
+        role="button"
+        :tabindex="isDisabled('pass-odds') ? -1 : 0"
+        :aria-label="zoneAriaLabel('pass-odds')"
+        :aria-disabled="isDisabled('pass-odds') || undefined"
         @click="handleZoneClick('pass-odds')"
       >
         <rect
@@ -562,6 +635,10 @@ const puckY = computed(() => {
         id="dont-pass-odds"
         class="zone"
         :class="{ 'disabled': isDisabled('dont-pass-odds'), 'odds-available': !isDisabled('dont-pass-odds') && zoneBetTotal('dont-pass-odds') === 0 }"
+        role="button"
+        :tabindex="isDisabled('dont-pass-odds') ? -1 : 0"
+        :aria-label="zoneAriaLabel('dont-pass-odds')"
+        :aria-disabled="isDisabled('dont-pass-odds') || undefined"
         @click="handleZoneClick('dont-pass-odds')"
       >
         <rect
@@ -585,6 +662,7 @@ const puckY = computed(() => {
         id="come-odds"
         class="zone"
         :class="{ disabled: isDisabled('come-odds') }"
+        tabindex="-1"
         @click="handleZoneClick('come-odds')"
       >
       <!-- Come odds appear as a small zone above each number box where a come bet is established -->
@@ -595,6 +673,7 @@ const puckY = computed(() => {
         id="dont-come-odds"
         class="zone"
         :class="{ disabled: isDisabled('dont-come-odds') }"
+        tabindex="-1"
         @click="handleZoneClick('dont-come-odds')"
       />
 
@@ -631,6 +710,10 @@ const puckY = computed(() => {
             id="hard-4"
             class="zone"
             :class="{ disabled: isDisabled('hard-4') }"
+            role="button"
+            :tabindex="isDisabled('hard-4') ? -1 : 0"
+            :aria-label="zoneAriaLabel('hard-4')"
+            :aria-disabled="isDisabled('hard-4') || undefined"
             @click="handleZoneClick('hard-4')"
           >
             <rect
@@ -658,6 +741,10 @@ const puckY = computed(() => {
             id="hard-6"
             class="zone"
             :class="{ disabled: isDisabled('hard-6') }"
+            role="button"
+            :tabindex="isDisabled('hard-6') ? -1 : 0"
+            :aria-label="zoneAriaLabel('hard-6')"
+            :aria-disabled="isDisabled('hard-6') || undefined"
             @click="handleZoneClick('hard-6')"
           >
             <rect
@@ -685,6 +772,10 @@ const puckY = computed(() => {
             id="hard-8"
             class="zone"
             :class="{ disabled: isDisabled('hard-8') }"
+            role="button"
+            :tabindex="isDisabled('hard-8') ? -1 : 0"
+            :aria-label="zoneAriaLabel('hard-8')"
+            :aria-disabled="isDisabled('hard-8') || undefined"
             @click="handleZoneClick('hard-8')"
           >
             <rect
@@ -712,6 +803,10 @@ const puckY = computed(() => {
             id="hard-10"
             class="zone"
             :class="{ disabled: isDisabled('hard-10') }"
+            role="button"
+            :tabindex="isDisabled('hard-10') ? -1 : 0"
+            :aria-label="zoneAriaLabel('hard-10')"
+            :aria-disabled="isDisabled('hard-10') || undefined"
             @click="handleZoneClick('hard-10')"
           >
             <rect
@@ -740,6 +835,10 @@ const puckY = computed(() => {
           id="any-seven"
           class="zone"
           :class="{ disabled: isDisabled('any-seven') }"
+          role="button"
+          :tabindex="isDisabled('any-seven') ? -1 : 0"
+          :aria-label="zoneAriaLabel('any-seven')"
+          :aria-disabled="isDisabled('any-seven') || undefined"
           @click="handleZoneClick('any-seven')"
         >
           <rect
@@ -767,6 +866,10 @@ const puckY = computed(() => {
           id="any-craps"
           class="zone"
           :class="{ disabled: isDisabled('any-craps') }"
+          role="button"
+          :tabindex="isDisabled('any-craps') ? -1 : 0"
+          :aria-label="zoneAriaLabel('any-craps')"
+          :aria-disabled="isDisabled('any-craps') || undefined"
           @click="handleZoneClick('any-craps')"
         >
           <rect
@@ -799,6 +902,10 @@ const puckY = computed(() => {
             id="aces"
             class="zone"
             :class="{ disabled: isDisabled('aces') }"
+            role="button"
+            :tabindex="isDisabled('aces') ? -1 : 0"
+            :aria-label="zoneAriaLabel('aces')"
+            :aria-disabled="isDisabled('aces') || undefined"
             @click="handleZoneClick('aces')"
           >
             <rect
@@ -831,6 +938,10 @@ const puckY = computed(() => {
             id="ace-deuce"
             class="zone"
             :class="{ disabled: isDisabled('ace-deuce') }"
+            role="button"
+            :tabindex="isDisabled('ace-deuce') ? -1 : 0"
+            :aria-label="zoneAriaLabel('ace-deuce')"
+            :aria-disabled="isDisabled('ace-deuce') || undefined"
             @click="handleZoneClick('ace-deuce')"
           >
             <rect
@@ -863,6 +974,10 @@ const puckY = computed(() => {
             id="yo-eleven"
             class="zone"
             :class="{ disabled: isDisabled('yo-eleven') }"
+            role="button"
+            :tabindex="isDisabled('yo-eleven') ? -1 : 0"
+            :aria-label="zoneAriaLabel('yo-eleven')"
+            :aria-disabled="isDisabled('yo-eleven') || undefined"
             @click="handleZoneClick('yo-eleven')"
           >
             <rect
@@ -895,6 +1010,10 @@ const puckY = computed(() => {
             id="boxcars"
             class="zone"
             :class="{ disabled: isDisabled('boxcars') }"
+            role="button"
+            :tabindex="isDisabled('boxcars') ? -1 : 0"
+            :aria-label="zoneAriaLabel('boxcars')"
+            :aria-disabled="isDisabled('boxcars') || undefined"
             @click="handleZoneClick('boxcars')"
           >
             <rect
@@ -928,6 +1047,10 @@ const puckY = computed(() => {
           id="craps-eleven"
           class="zone"
           :class="{ disabled: isDisabled('craps-eleven') }"
+          role="button"
+          :tabindex="isDisabled('craps-eleven') ? -1 : 0"
+          :aria-label="zoneAriaLabel('craps-eleven')"
+          :aria-disabled="isDisabled('craps-eleven') || undefined"
           @click="handleZoneClick('craps-eleven')"
         >
           <rect
@@ -955,6 +1078,10 @@ const puckY = computed(() => {
           id="horn"
           class="zone"
           :class="{ disabled: isDisabled('horn') }"
+          role="button"
+          :tabindex="isDisabled('horn') ? -1 : 0"
+          :aria-label="zoneAriaLabel('horn')"
+          :aria-disabled="isDisabled('horn') || undefined"
           @click="handleZoneClick('horn')"
         >
           <rect
@@ -982,6 +1109,10 @@ const puckY = computed(() => {
           id="horn-high"
           class="zone"
           :class="{ disabled: isDisabled('horn-high') }"
+          role="button"
+          :tabindex="isDisabled('horn-high') ? -1 : 0"
+          :aria-label="zoneAriaLabel('horn-high')"
+          :aria-disabled="isDisabled('horn-high') || undefined"
           @click="handleZoneClick('horn-high')"
         >
           <rect
@@ -1009,6 +1140,10 @@ const puckY = computed(() => {
           id="hop-easy"
           class="zone"
           :class="{ disabled: isDisabled('hop-easy') }"
+          role="button"
+          :tabindex="isDisabled('hop-easy') ? -1 : 0"
+          :aria-label="zoneAriaLabel('hop-easy')"
+          :aria-disabled="isDisabled('hop-easy') || undefined"
           @click="handleZoneClick('hop-easy')"
         >
           <rect
@@ -1035,6 +1170,10 @@ const puckY = computed(() => {
           id="hop-hard"
           class="zone"
           :class="{ disabled: isDisabled('hop-hard') }"
+          role="button"
+          :tabindex="isDisabled('hop-hard') ? -1 : 0"
+          :aria-label="zoneAriaLabel('hop-hard')"
+          :aria-disabled="isDisabled('hop-hard') || undefined"
           @click="handleZoneClick('hop-hard')"
         >
           <rect
@@ -1619,5 +1758,17 @@ const puckY = computed(() => {
 .study-mode .zone:hover .zone-fill,
 .study-mode .zone:hover .zone-fill-prop {
   fill: rgba(60, 120, 180, 0.4);
+}
+
+/* ===== Keyboard focus ===== */
+.zone:focus {
+  outline: none;
+}
+
+.zone:focus-visible .zone-fill,
+.zone:focus-visible .zone-fill-prop,
+.zone:focus-visible .zone-fill-odds-area {
+  stroke: #fbbf24;
+  stroke-width: 3;
 }
 </style>
