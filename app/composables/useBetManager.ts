@@ -11,6 +11,7 @@ import {
 } from '~/utils/betTypes'
 import { crapsConfig } from '~~/craps.config'
 import { calculateVig, getMaxOdds } from '~/engine/payouts'
+import { canRemoveBet } from '~/engine/betting'
 
 interface ValidationResult {
   valid: boolean
@@ -296,18 +297,10 @@ export function useBetManager() {
     const bet = store.activeBets.find(b => b.id === betId)
     if (!bet) return false
 
-    // Contract bets cannot be removed once point is established
-    if (bet.isContract && bet.pointNumber !== null) {
-      // Pass line with point established is a contract
-      if (bet.type === 'pass' && store.point !== null) {
-        console.warn('Cannot remove a contract Pass bet after point is established')
-        return false
-      }
-      // Come bet with established point is a contract
-      if (bet.type === 'come' && bet.pointNumber !== null) {
-        console.warn('Cannot remove a contract Come bet after point is established')
-        return false
-      }
+    const removal = canRemoveBet(bet, store.point)
+    if (!removal.allowed) {
+      console.warn(removal.reason)
+      return false
     }
 
     // Calculate vig refund for buy bets taken down before resolution
