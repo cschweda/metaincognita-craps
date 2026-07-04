@@ -154,8 +154,8 @@ function betTypeLabel(type: string): string {
           No recommendations right now. Place some bets!
         </div>
         <div
-          v-for="(rec, i) in recommendations"
-          :key="`${i}-${rec.action}`"
+          v-for="rec in recommendations"
+          :key="`${rec.action}-${rec.detail.join('|')}`"
           class="rounded-lg border p-3"
           :class="priorityBorder(rec.priority)"
         >
