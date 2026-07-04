@@ -137,6 +137,7 @@ const puckY = computed(() => {
       @mousemove="handleStudyMouseMove"
       @mouseleave="handleStudyMouseLeave"
       @keydown="handleZoneKeydown"
+      @mousedown.prevent
     >
       <defs>
         <!-- Slight transparency fill for zone interactivity -->

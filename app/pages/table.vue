@@ -255,7 +255,7 @@ function handleRoll() {
 
 // ── Keyboard: spacebar to roll ──
 function onKeydown(e: KeyboardEvent) {
-  if (e.target !== document.body) return
+  if (e.target !== document.body && e.target !== document.documentElement) return
   if (e.code === 'Space' && canRoll.value && !diceRolling.value) {
     e.preventDefault()
     handleRoll()
