@@ -1,58 +1,12 @@
 import { describe, it, expect } from 'vitest'
-
-/**
- * usePayoutCalc is a composable that reads crapsConfig at module scope.
- * Since it imports from '~/utils/betTypes' and '~~/craps.config' (Nuxt aliases),
- * we replicate the pure functions here using the actual config values for testing.
- */
-
-// Import config directly (relative path)
-import { crapsConfig } from '../../craps.config'
 import type { ActiveBet, TableRules } from '../../app/utils/betTypes'
-
-const { payouts } = crapsConfig
-
-// ---- Replicate the pure payout functions exactly as in usePayoutCalc ----
-
-function applyRatio(amountCents: number, ratio: [number, number]): number {
-  return Math.floor(amountCents * ratio[0] / ratio[1])
-}
-
-function calculateVig(amountCents: number): number {
-  return Math.floor(amountCents * 5 / 100)
-}
-
-function applyPayoutRounding(cents: number, rounding: TableRules['payoutRounding']): number {
-  if (rounding === 'dollar') {
-    return Math.floor(cents / 100) * 100
-  }
-  if (rounding === 'quarter') {
-    return Math.floor(cents / 25) * 25
-  }
-  return cents
-}
-
-function calculateFieldPayout(amount: number, total: number, tableRules: TableRules): number {
-  if (total === 12) {
-    const ratio: [number, number] = [tableRules.fieldTwelvePayout, 1]
-    return amount + applyRatio(amount, ratio)
-  }
-  const ratio = payouts.field[total]
-  if (!ratio) return 0 // not a field number
-  return amount + applyRatio(amount, ratio)
-}
-
-function calculateBuyPayout(bet: ActiveBet, tableRules: TableRules): number {
-  const num = parseInt(bet.type.replace('buy', ''))
-  const ratio = payouts.buy[num]
-  if (!ratio) return bet.amount
-  const winnings = applyRatio(bet.amount, ratio)
-  if (tableRules.buyVigTiming === 'on_win') {
-    const vig = calculateVig(winnings)
-    return bet.amount + winnings - vig
-  }
-  return bet.amount + winnings
-}
+import {
+  applyRatio,
+  calculateVig,
+  applyPayoutRounding,
+  calculatePayout,
+  calculateFieldPayout
+} from '../../app/engine/payouts'
 
 // ---- Default table rules for testing ----
 const defaultRules: TableRules = {
@@ -178,7 +132,7 @@ describe('Buy bet payout with vig on win', () => {
     // Winnings = applyRatio(2000, [2,1]) = 4000
     // Vig = floor(4000 * 5/100) = 200
     // Total payout = 2000 + 4000 - 200 = 5800
-    const payout = calculateBuyPayout(bet, rules)
+    const payout = calculatePayout(bet, rules)
     expect(payout).toBe(5800)
   })
 
@@ -199,7 +153,7 @@ describe('Buy bet payout with vig on win', () => {
     const rules: TableRules = { ...defaultRules, buyVigTiming: 'on_bet' }
     // Winnings = 4000, no vig deducted at payout
     // Total = 2000 + 4000 = 6000
-    const payout = calculateBuyPayout(bet, rules)
+    const payout = calculatePayout(bet, rules)
     expect(payout).toBe(6000)
   })
 })

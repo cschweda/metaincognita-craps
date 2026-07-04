@@ -10,6 +10,7 @@ import {
   CONTRACT_BETS
 } from '~/utils/betTypes'
 import { crapsConfig } from '~~/craps.config'
+import { calculateVig, getMaxOdds } from '~/engine/payouts'
 
 interface ValidationResult {
   valid: boolean
@@ -27,7 +28,6 @@ interface GameState {
 
 export function useBetManager() {
   const store = useCrapsStore()
-  const { calculateVig, getMaxOdds } = usePayoutCalc()
 
   /**
    * Validate whether a bet can be placed.

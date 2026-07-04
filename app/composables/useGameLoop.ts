@@ -8,6 +8,14 @@ import {
   POINT_NUMBERS
 } from '~/utils/betTypes'
 import { crapsConfig } from '~~/craps.config'
+import {
+  applyRatio,
+  calculatePayout,
+  calculateFieldPayout,
+  calculateCEPayout,
+  calculateHornPayout,
+  calculateHornHighPayout
+} from '~/engine/payouts'
 
 const FIELD_NUMBERS = new Set([2, 3, 4, 9, 10, 11, 12])
 
@@ -47,14 +55,6 @@ function getResolutionOrder(type: BetType): number {
 export function useGameLoop() {
   const store = useCrapsStore()
   const { roll: rollDice } = useDice()
-  const {
-    applyRatio,
-    calculatePayout,
-    calculateFieldPayout,
-    calculateCEPayout,
-    calculateHornPayout,
-    calculateHornHighPayout
-  } = usePayoutCalc()
 
   /**
    * Check if a bet is currently working given the game phase.
