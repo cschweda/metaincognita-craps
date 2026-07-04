@@ -422,7 +422,7 @@ export function useAdvisor() {
         available.push({ name: 'Hard 6', type: 'hard6', where: '"HARD 6" in center props section', edge: pct(edges.hard6), pays: '9:1', note: 'Wins only if 3+3 rolls before 7 or easy 6. Fun but expensive.', rating: 'bad' })
       }
       if (!heroBets.some(b => b.type === 'hard8')) {
-        available.push({ name: 'Hard 8', type: 'hard8', where: '"HARD 8" in center props section', edge: pct(edges.hard6), pays: '9:1', note: 'Wins only if 4+4 rolls before 7 or easy 8.', rating: 'bad' })
+        available.push({ name: 'Hard 8', type: 'hard8', where: '"HARD 8" in center props section', edge: pct(edges.hard8), pays: '9:1', note: 'Wins only if 4+4 rolls before 7 or easy 8.', rating: 'bad' })
       }
       // Props
       available.push({ name: 'Any Craps', type: 'anyCraps', where: '"ANY CRAPS" in center section', edge: pct(edges.anyCraps), pays: '7:1', note: 'One-roll. Wins on 2, 3, or 12. High edge.', rating: 'terrible' })
