@@ -251,6 +251,20 @@ export function useBetManager() {
       betPoint = 11
     }
 
+    // Hop bets are meaningless without a target total
+    if ((type === 'hopEasy' || type === 'hopHard') && betPoint === null) {
+      console.warn('Hop bets require a target total')
+      return null
+    }
+    if (type === 'hopHard' && betPoint !== null && ![4, 6, 8, 10].includes(betPoint)) {
+      console.warn('Hop hard target must be 4, 6, 8, or 10')
+      return null
+    }
+    if (type === 'hopEasy' && betPoint !== null && (betPoint < 3 || betPoint > 11)) {
+      console.warn('Hop easy target must be between 3 and 11')
+      return null
+    }
+
     const isContract = CONTRACT_BETS.includes(type)
     const isWorking = getDefaultWorking(type, store.phase, store.tableRules)
 

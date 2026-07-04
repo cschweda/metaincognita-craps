@@ -126,6 +126,16 @@ const disabledZones = computed(() => {
   return disabled
 })
 
+// ── Hop bet target picker ──
+const hopPicker = ref<{ open: boolean, type: 'hopEasy' | 'hopHard' }>({ open: false, type: 'hopHard' })
+const hopTargets = computed(() =>
+  hopPicker.value.type === 'hopHard' ? [4, 6, 8, 10] : [3, 4, 5, 6, 7, 8, 9, 10, 11]
+)
+function placeHopBet(target: number) {
+  hopPicker.value.open = false
+  placeBet(hopPicker.value.type, store.selectedChipValue, 'hero', target)
+}
+
 // ── Zone click: place or remove ──
 function handleZoneClick(zoneId: string) {
   if (studyMode.value) return
@@ -139,6 +149,11 @@ function handleZoneClick(zoneId: string) {
   }
   const betType = ZONE_TO_BET_TYPE[zoneId]
   if (!betType) return
+  if (betType === 'hopEasy' || betType === 'hopHard') {
+    hopPicker.value = { open: true, type: betType }
+    if (autoRoll.value) stopAutoRollTimer()
+    return
+  }
   placeBet(betType, store.selectedChipValue, 'hero')
   // Pause auto-roll when hero interacts
   if (autoRoll.value) stopAutoRollTimer()
@@ -482,6 +497,27 @@ function handleAdvisorBet(betType: BetType) {
           label="Leave Table"
           @click="confirmNewGame"
         />
+      </template>
+    </UModal>
+
+    <!-- Hop bet target picker -->
+    <UModal
+      v-model:open="hopPicker.open"
+      :title="hopPicker.type === 'hopHard' ? 'Hop Hard — pick the pair total' : 'Hop Easy — pick the total'"
+      description="One-roll bet on the next roll landing your number the chosen way."
+    >
+      <template #body>
+        <div class="flex flex-wrap gap-2">
+          <UButton
+            v-for="t in hopTargets"
+            :key="t"
+            :label="String(t)"
+            color="primary"
+            variant="soft"
+            size="lg"
+            @click="placeHopBet(t)"
+          />
+        </div>
       </template>
     </UModal>
   </div>
