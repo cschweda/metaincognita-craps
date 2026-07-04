@@ -31,5 +31,8 @@ coverage/
 playwright-report/
 test-results/
 
+# Playwright MCP browser dumps
+.playwright-mcp/
+
 # Superpowers SDD scratch
 .superpowers/
