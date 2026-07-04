@@ -11,7 +11,7 @@ import {
 } from '~/utils/betTypes'
 import { crapsConfig } from '~~/craps.config'
 import { calculateVig, getMaxOdds } from '~/engine/payouts'
-import { canRemoveBet } from '~/engine/betting'
+import { canRemoveBet, getDefaultWorking } from '~/engine/betting'
 
 interface ValidationResult {
   valid: boolean
@@ -249,18 +249,7 @@ export function useBetManager() {
     }
 
     const isContract = CONTRACT_BETS.includes(type)
-    // Default working status
-    let isWorking = true
-    if (store.phase === 'COME_OUT') {
-      // Place, Buy, Hardways, Pass Odds, Come Odds are OFF on come-out by default
-      if (isPlaceBet(type) || isBuyBet(type) || isHardwayBet(type) || type === 'passOdds' || type === 'comeOdds') {
-        isWorking = false
-      }
-    }
-    // Lay bets and Don't Come/Don't Pass odds are always working
-    if (isLayBet(type) || type === 'dontComeOdds' || type === 'dontPassOdds') {
-      isWorking = true
-    }
+    const isWorking = getDefaultWorking(type, store.phase, store.tableRules)
 
     const bet: ActiveBet = {
       id: generateBetId(),

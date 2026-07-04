@@ -60,25 +60,16 @@ export function getResolutionOrder(type: BetType): number {
 /**
  * Check if a bet is currently working given the game phase.
  */
-export function isBetWorking(bet: ActiveBet, phase: GamePhase): boolean {
-  // Lay bets are ALWAYS working
+export function isBetWorking(bet: ActiveBet, _phase: GamePhase): boolean {
+  // Lay bets and don't-side odds are ALWAYS working
   if (isLayBet(bet.type)) return true
-  // Don't Come flat bets are ALWAYS working
-  if (bet.type === 'dontCome' && bet.pointNumber !== null) return true
-  // Don't Come / Don't Pass odds are ALWAYS working
   if (bet.type === 'dontComeOdds' || bet.type === 'dontPassOdds') return true
-
-  // During come-out, Place/Buy/Hardways/PassOdds/ComeOdds are OFF by default
-  if (phase === 'COME_OUT') {
-    if (isPlaceBet(bet.type) || isBuyBet(bet.type) || isHardwayBet(bet.type)) {
-      return bet.isWorking // only if explicitly toggled on
-    }
-    if (bet.type === 'passOdds' || bet.type === 'comeOdds') {
-      return bet.isWorking
-    }
-  }
-
-  return true // all other bets are working
+  // These honor their working flag in every phase. Defaults are set at
+  // placement and on phase transitions (getDefaultWorking); the flag is
+  // the single source of truth here.
+  if (isPlaceBet(bet.type) || isBuyBet(bet.type) || isHardwayBet(bet.type)) return bet.isWorking
+  if (bet.type === 'passOdds' || bet.type === 'comeOdds') return bet.isWorking
+  return true
 }
 
 /**

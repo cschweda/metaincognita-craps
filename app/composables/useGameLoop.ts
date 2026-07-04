@@ -3,10 +3,11 @@ import { isPlaceBet, isBuyBet, isHardwayBet } from '~/utils/betTypes'
 import {
   resolveRoll,
   isBetWorking,
-  makeResolution,
   transition,
   getStickmanCall
 } from '~/engine/resolution'
+import { getDefaultWorking } from '~/engine/betting'
+import { calculateVig } from '~/engine/payouts'
 import { rollDice } from '~/engine/rng'
 
 export function useGameLoop() {
@@ -114,26 +115,21 @@ export function useGameLoop() {
     store.setPoint(newPoint)
     store.setPhase(newPhase)
 
-    // 8. If seven-out, sweep all remaining bets and return OFF odds
+    // 8. If seven-out, return all remaining (OFF) bets to their owners
     if (newPhase === 'SEVEN_OUT') {
       store.sessionStats.pointsMissed++
 
-      // Return OFF odds bets (Come Odds, Pass Odds that were not working)
-      // and sweep remaining Place/Buy/Hardways that were OFF and thus not resolved
-      const orphanedBets = store.activeBets.filter(b => b.status !== 'resolved')
-      for (const bet of orphanedBets) {
-        if (bet.type === 'comeOdds' || bet.type === 'passOdds') {
-          // OFF odds are returned to the player on seven-out
-          store.removeBet(bet.id)
-        } else if (isPlaceBet(bet.type) || isBuyBet(bet.type) || isHardwayBet(bet.type)) {
-          // Place/Buy/Hardways that were OFF are swept on seven-out (lost)
-          const sweepRes = makeResolution(bet, 'lose', 0, `${bet.type} swept on seven-out`)
-          store.applyResolutions([sweepRes])
-        }
+      // Every working bet already resolved on the 7. Anything still active
+      // was OFF — off bets are not at risk, so return them to their owners.
+      const offBets = store.activeBets.filter(b => b.status !== 'resolved')
+      for (const bet of offBets) {
+        const vigRefund = isBuyBet(bet.type) && store.tableRules.buyVigTiming === 'on_bet'
+          ? calculateVig(bet.amount)
+          : 0
+        store.removeBet(bet.id, vigRefund)
       }
 
       store.advanceShooter()
-      // Transition to come-out for new shooter
       store.setPhase('COME_OUT')
     }
 
@@ -160,10 +156,10 @@ export function useGameLoop() {
       for (const bet of store.activeBets) {
         if (bet.status === 'resolved') continue
         if (isPlaceBet(bet.type) || isBuyBet(bet.type) || isHardwayBet(bet.type)) {
-          bet.isWorking = true
+          bet.isWorking = getDefaultWorking(bet.type, newPhase, store.tableRules)
         }
         if (bet.type === 'passOdds' || bet.type === 'comeOdds') {
-          bet.isWorking = true
+          bet.isWorking = getDefaultWorking(bet.type, newPhase, store.tableRules)
         }
       }
     }
@@ -172,10 +168,10 @@ export function useGameLoop() {
       for (const bet of store.activeBets) {
         if (bet.status === 'resolved') continue
         if (isPlaceBet(bet.type) || isBuyBet(bet.type) || isHardwayBet(bet.type)) {
-          bet.isWorking = false
+          bet.isWorking = getDefaultWorking(bet.type, newPhase, store.tableRules)
         }
         if (bet.type === 'passOdds' || bet.type === 'comeOdds') {
-          bet.isWorking = false
+          bet.isWorking = getDefaultWorking(bet.type, newPhase, store.tableRules)
         }
       }
     }

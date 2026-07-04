@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
-import type { ActiveBet } from '../../app/utils/betTypes'
-import { canRemoveBet } from '../../app/engine/betting'
+import type { ActiveBet, TableRules } from '../../app/utils/betTypes'
+import { canRemoveBet, getDefaultWorking } from '../../app/engine/betting'
 
 function makeBet(overrides: Partial<ActiveBet> & Pick<ActiveBet, 'type'>): ActiveBet {
   return {
@@ -37,5 +37,40 @@ describe('canRemoveBet', () => {
     expect(canRemoveBet(makeBet({ type: 'place6', pointNumber: 6 }), 6).allowed).toBe(true)
     expect(canRemoveBet(makeBet({ type: 'field' }), 6).allowed).toBe(true)
     expect(canRemoveBet(makeBet({ type: 'dontPass' }), 6).allowed).toBe(true)
+    expect(canRemoveBet(makeBet({ type: 'dontCome', pointNumber: 9 }), 6).allowed).toBe(true)
+  })
+})
+
+const rules: TableRules = {
+  minBet: 500,
+  maxBet: 50000,
+  oddsMultiple: '3-4-5x',
+  fieldTwelvePayout: 3,
+  buyVigTiming: 'on_win',
+  hardwaysOnComeOut: false,
+  payoutRounding: 'exact'
+}
+
+describe('getDefaultWorking', () => {
+  it('place/buy/pass-odds/come-odds are OFF on come-out', () => {
+    expect(getDefaultWorking('place6', 'COME_OUT', rules)).toBe(false)
+    expect(getDefaultWorking('buy4', 'COME_OUT', rules)).toBe(false)
+    expect(getDefaultWorking('passOdds', 'COME_OUT', rules)).toBe(false)
+    expect(getDefaultWorking('comeOdds', 'COME_OUT', rules)).toBe(false)
+  })
+
+  it('hardways on come-out follow the hardwaysOnComeOut table rule', () => {
+    expect(getDefaultWorking('hard8', 'COME_OUT', rules)).toBe(false)
+    expect(getDefaultWorking('hard8', 'COME_OUT', { ...rules, hardwaysOnComeOut: true })).toBe(true)
+  })
+
+  it('everything works during the point phase', () => {
+    expect(getDefaultWorking('place6', 'POINT_PHASE', rules)).toBe(true)
+    expect(getDefaultWorking('hard8', 'POINT_PHASE', rules)).toBe(true)
+  })
+
+  it('lay bets and dont-side odds always work', () => {
+    expect(getDefaultWorking('lay4', 'COME_OUT', rules)).toBe(true)
+    expect(getDefaultWorking('dontPassOdds', 'COME_OUT', rules)).toBe(true)
   })
 })

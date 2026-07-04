@@ -265,3 +265,37 @@ describe('resolveRoll – Big 6', () => {
     expect(r.payout).toBe(0)
   })
 })
+
+describe('resolveRoll – working status (OFF bets take no action)', () => {
+  it('OFF place bet does not resolve on its number during point phase', () => {
+    const bet = makeBet({ type: 'place6', pointNumber: 6, isWorking: false })
+    const res = resolveRoll(makeRoll(4, 2), [bet], 'POINT_PHASE', defaultTableRules, 8)
+    expect(res).toHaveLength(0)
+  })
+
+  it('OFF place bet does not lose on seven-out', () => {
+    const bet = makeBet({ type: 'place8', pointNumber: 8, isWorking: false })
+    const res = resolveRoll(makeRoll(4, 3), [bet], 'POINT_PHASE', defaultTableRules, 6)
+    expect(res).toHaveLength(0)
+  })
+
+  it('OFF hardway does not resolve during point phase', () => {
+    const bet = makeBet({ type: 'hard8', isWorking: false })
+    const res = resolveRoll(makeRoll(4, 4), [bet], 'POINT_PHASE', defaultTableRules, 6)
+    expect(res).toHaveLength(0)
+  })
+
+  it('ON place bet still wins during point phase', () => {
+    const bet = makeBet({ type: 'place6', pointNumber: 6, isWorking: true })
+    const res = resolveRoll(makeRoll(4, 2), [bet], 'POINT_PHASE', defaultTableRules, 8)
+    expect(res).toHaveLength(1)
+    expect(res[0]!.outcome).toBe('win')
+  })
+
+  it('don\'t-side odds are always working regardless of the flag', () => {
+    const bet = makeBet({ type: 'dontPassOdds', pointNumber: 6, isWorking: false })
+    const res = resolveRoll(makeRoll(4, 3), [bet], 'POINT_PHASE', defaultTableRules, 6)
+    expect(res).toHaveLength(1)
+    expect(res[0]!.outcome).toBe('win')
+  })
+})
