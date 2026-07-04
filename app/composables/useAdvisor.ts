@@ -24,6 +24,9 @@ function fc(cents: number): string {
 
 export function useAdvisor() {
   const store = useCrapsStore()
+  const edges = crapsConfig.houseEdges
+  /** Config stores fractions (0.01414); the advisor displays percents (1.41). */
+  const pct = (edge: number) => +(edge * 100).toFixed(2)
 
   function getRecommendations(): Recommendation[] {
     const recs: Recommendation[] = []
@@ -129,7 +132,7 @@ export function useAdvisor() {
             `The house edge is just 1.41% — meaning the casino keeps about $1.41 for every $100 you bet over time. This is one of the best bets in any casino.`
           ],
           priority: 'strong',
-          houseEdge: 0.01414
+          houseEdge: edges.passLine
         })
         recs.push({
           action: 'Or bet on Don\'t Pass (the opposite)',
@@ -144,7 +147,7 @@ export function useAdvisor() {
             `Slightly better math (1.36% edge) but socially unpopular at a real table — you're cheering when everyone else groans. This is called "playing the dark side."`
           ],
           priority: 'good',
-          houseEdge: 0.01364
+          houseEdge: edges.dontPass
         })
       } else {
         recs.push({
@@ -194,7 +197,7 @@ export function useAdvisor() {
             `Why it matters: Your Pass Line bet has a 1.41% edge. Every dollar you move to Odds has a 0% edge. Maxing your odds dilutes the overall house advantage to about 0.37%. Always take the maximum odds the table allows.`
           ],
           priority: 'strong',
-          houseEdge: 0.0
+          houseEdge: edges.passOdds
         })
       }
 
@@ -209,7 +212,7 @@ export function useAdvisor() {
             `You have a ${(100 - parseFloat(prob)).toFixed(1)}% chance of winning (7 before ${point}). This is the mathematically optimal play.`
           ],
           priority: 'strong',
-          houseEdge: 0.0
+          houseEdge: edges.dontOdds
         })
       }
 
@@ -226,7 +229,7 @@ export function useAdvisor() {
             `Having 2-3 numbers working with odds is called the "Three Point Molly" — a textbook grinding strategy. You currently have ${comeCount} come bet${comeCount !== 1 ? 's' : ''}, so adding ${comeCount === 0 ? '1-2 more' : '1 more'} gives you more ways to win on each roll.`
           ],
           priority: 'good',
-          houseEdge: 0.01414
+          houseEdge: edges.come
         })
       }
 
@@ -262,7 +265,7 @@ export function useAdvisor() {
             `Compare: Pass Line costs $1.41 per $100. Any 7 costs $16.67 per $100. That's almost 12 times worse.`
           ],
           priority: 'warning',
-          houseEdge: 0.16667
+          houseEdge: edges.any7
         })
       }
       if (bet.type === 'big6' || bet.type === 'big8') {
@@ -277,7 +280,7 @@ export function useAdvisor() {
             `The house edge on Big ${num} is 9.09%. Place ${num} is just 1.52%. You're giving the house 6× more for no reason. Never bet Big 6 or Big 8.`
           ],
           priority: 'warning',
-          houseEdge: 0.09091
+          houseEdge: num === 6 ? edges.big6 : edges.big8
         })
       }
       if (bet.type === 'hard4' || bet.type === 'hard10') {
@@ -292,7 +295,7 @@ export function useAdvisor() {
             `The house takes $11.11 per $100 wagered. Fun to hit, but terrible math.`
           ],
           priority: 'warning',
-          houseEdge: 0.11111
+          houseEdge: num === 4 ? edges.hard4 : edges.hard10
         })
       }
       if (bet.type === 'hard6' || bet.type === 'hard8') {
@@ -307,7 +310,7 @@ export function useAdvisor() {
             `If you want action on ${num}, a Place ${num} bet costs only $1.52 per $100 — that's 6× cheaper.`
           ],
           priority: 'warning',
-          houseEdge: 0.09091
+          houseEdge: num === 6 ? edges.hard6 : edges.hard8
         })
       }
       if ((bet.type === 'place6' || bet.type === 'place8') && bet.amount % 600 !== 0) {
@@ -345,7 +348,7 @@ export function useAdvisor() {
               `Compare to Place ${num} at 6.67% — the Buy bet is 4× cheaper. Smart play.`
             ],
             priority: 'info',
-            houseEdge: 0.01667
+            houseEdge: num === 4 ? edges.buy4VigOnWin : edges.buy10VigOnWin
           })
         }
       }
@@ -370,12 +373,12 @@ export function useAdvisor() {
 
     if (phase === 'COME_OUT') {
       if (!hasPass && !alreadyMentioned.has('pass')) {
-        available.push({ name: 'Pass Line', type: 'pass', where: 'Bottom of table — "PASS LINE"', edge: 1.41, pays: '1:1 (even money)', note: 'Best starting bet. Bet with the shooter.', rating: 'best' })
+        available.push({ name: 'Pass Line', type: 'pass', where: 'Bottom of table — "PASS LINE"', edge: pct(edges.passLine), pays: '1:1 (even money)', note: 'Best starting bet. Bet with the shooter.', rating: 'best' })
       }
       if (!hasDontPass && !alreadyMentioned.has('dontPass')) {
-        available.push({ name: 'Don\'t Pass', type: 'dontPass', where: '"DON\'T PASS BAR" above Pass Line', edge: 1.36, pays: '1:1 (even money)', note: 'Slightly better math, bet against shooter.', rating: 'best' })
+        available.push({ name: 'Don\'t Pass', type: 'dontPass', where: '"DON\'T PASS BAR" above Pass Line', edge: pct(edges.dontPass), pays: '1:1 (even money)', note: 'Slightly better math, bet against shooter.', rating: 'best' })
       }
-      available.push({ name: 'Field', type: 'field', where: '"FIELD" area in the middle', edge: store.tableRules.fieldTwelvePayout === 3 ? 2.78 : 5.56, pays: '1:1 (2:1 on 2, 3:1 on 12)', note: 'One-roll bet. Wins on 2/3/4/9/10/11/12, loses on 5/6/7/8.', rating: 'ok' })
+      available.push({ name: 'Field', type: 'field', where: '"FIELD" area in the middle', edge: pct(store.tableRules.fieldTwelvePayout === 3 ? edges.field2x3x : edges.field2x2x), pays: '1:1 (2:1 on 2, 3:1 on 12)', note: 'One-roll bet. Wins on 2/3/4/9/10/11/12, loses on 5/6/7/8.', rating: 'ok' })
     }
 
     if (phase === 'POINT_PHASE' && point) {
@@ -383,22 +386,22 @@ export function useAdvisor() {
         // already covered above
       }
       if (!alreadyMentioned.has('come') && !pendingCome) {
-        available.push({ name: 'Come', type: 'come', where: '"COME" area in center of table', edge: 1.41, pays: '1:1', note: 'Works like a new Pass Line bet. Establish your own point.', rating: 'best' })
+        available.push({ name: 'Come', type: 'come', where: '"COME" area in center of table', edge: pct(edges.come), pays: '1:1', note: 'Works like a new Pass Line bet. Establish your own point.', rating: 'best' })
       }
       if (!heroBets.some(b => b.type === 'dontCome')) {
-        available.push({ name: 'Don\'t Come', type: 'dontCome', where: '"DON\'T COME BAR" above Come', edge: 1.36, pays: '1:1', note: 'Like a new Don\'t Pass. Bet against the next number.', rating: 'best' })
+        available.push({ name: 'Don\'t Come', type: 'dontCome', where: '"DON\'T COME BAR" above Come', edge: pct(edges.dontCome), pays: '1:1', note: 'Like a new Don\'t Pass. Bet against the next number.', rating: 'best' })
       }
       // Place bets
       for (const num of [6, 8] as const) {
         const placeType = `place${num}` as BetType
         if (!heroBets.some(b => b.type === placeType)) {
-          available.push({ name: `Place ${num}`, type: placeType, where: `"${num === 6 ? 'SIX' : '8'}" number box at top of table`, edge: 1.52, pays: '7:6', note: `Bet ${num} rolls before 7. Bet in multiples of $6.`, rating: 'good' })
+          available.push({ name: `Place ${num}`, type: placeType, where: `"${num === 6 ? 'SIX' : '8'}" number box at top of table`, edge: pct(edges.place6), pays: '7:6', note: `Bet ${num} rolls before 7. Bet in multiples of $6.`, rating: 'good' })
         }
       }
       for (const num of [5, 9] as const) {
         const placeType = `place${num}` as BetType
         if (!heroBets.some(b => b.type === placeType)) {
-          available.push({ name: `Place ${num}`, type: placeType, where: `"${num}" number box at top of table`, edge: 4.0, pays: '7:5', note: `Bet ${num} rolls before 7. Decent but higher edge than 6/8.`, rating: 'ok' })
+          available.push({ name: `Place ${num}`, type: placeType, where: `"${num}" number box at top of table`, edge: pct(edges.place5), pays: '7:5', note: `Bet ${num} rolls before 7. Decent but higher edge than 6/8.`, rating: 'ok' })
         }
       }
       for (const num of [4, 10] as const) {
@@ -406,25 +409,25 @@ export function useAdvisor() {
         const placeType = `place${num}` as BetType
         if (!heroBets.some(b => b.type === buyType || b.type === placeType)) {
           if (store.tableRules.buyVigTiming === 'on_win') {
-            available.push({ name: `Buy ${num}`, type: buyType, where: `"${num}" number box (Buy bet)`, edge: 1.67, pays: '2:1 minus 5% vig on win', note: `Much better than Place ${num} (6.67%). Always Buy, never Place, on 4 and 10.`, rating: 'good' })
+            available.push({ name: `Buy ${num}`, type: buyType, where: `"${num}" number box (Buy bet)`, edge: pct(edges.buy4VigOnWin), pays: '2:1 minus 5% vig on win', note: `Much better than Place ${num} (6.67%). Always Buy, never Place, on 4 and 10.`, rating: 'good' })
           } else {
-            available.push({ name: `Place ${num}`, type: placeType, where: `"${num}" number box at top of table`, edge: 6.67, pays: '9:5', note: 'High edge. Consider a Buy bet if vig-on-win is available.', rating: 'bad' })
+            available.push({ name: `Place ${num}`, type: placeType, where: `"${num}" number box at top of table`, edge: pct(edges.place4), pays: '9:5', note: 'High edge. Consider a Buy bet if vig-on-win is available.', rating: 'bad' })
           }
         }
       }
       // Field
-      available.push({ name: 'Field', type: 'field', where: '"FIELD" area in the middle', edge: store.tableRules.fieldTwelvePayout === 3 ? 2.78 : 5.56, pays: '1:1 (2:1 on 2, 3:1 on 12)', note: 'One-roll bet. Resolves every single roll.', rating: 'ok' })
+      available.push({ name: 'Field', type: 'field', where: '"FIELD" area in the middle', edge: pct(store.tableRules.fieldTwelvePayout === 3 ? edges.field2x3x : edges.field2x2x), pays: '1:1 (2:1 on 2, 3:1 on 12)', note: 'One-roll bet. Resolves every single roll.', rating: 'ok' })
       // Hardways
       if (!heroBets.some(b => b.type === 'hard6')) {
-        available.push({ name: 'Hard 6', type: 'hard6', where: '"HARD 6" in center props section', edge: 9.09, pays: '9:1', note: 'Wins only if 3+3 rolls before 7 or easy 6. Fun but expensive.', rating: 'bad' })
+        available.push({ name: 'Hard 6', type: 'hard6', where: '"HARD 6" in center props section', edge: pct(edges.hard6), pays: '9:1', note: 'Wins only if 3+3 rolls before 7 or easy 6. Fun but expensive.', rating: 'bad' })
       }
       if (!heroBets.some(b => b.type === 'hard8')) {
-        available.push({ name: 'Hard 8', type: 'hard8', where: '"HARD 8" in center props section', edge: 9.09, pays: '9:1', note: 'Wins only if 4+4 rolls before 7 or easy 8.', rating: 'bad' })
+        available.push({ name: 'Hard 8', type: 'hard8', where: '"HARD 8" in center props section', edge: pct(edges.hard6), pays: '9:1', note: 'Wins only if 4+4 rolls before 7 or easy 8.', rating: 'bad' })
       }
       // Props
-      available.push({ name: 'Any Craps', type: 'anyCraps', where: '"ANY CRAPS" in center section', edge: 11.11, pays: '7:1', note: 'One-roll. Wins on 2, 3, or 12. High edge.', rating: 'terrible' })
-      available.push({ name: 'Yo (Eleven)', type: 'yo', where: '"YO" in center section', edge: 11.11, pays: '15:1', note: 'One-roll. Wins only on 11.', rating: 'terrible' })
-      available.push({ name: 'Any 7', type: 'any7', where: '"ANY SEVEN" in center section', edge: 16.67, pays: '4:1', note: 'Worst bet on the table. Never bet this.', rating: 'terrible' })
+      available.push({ name: 'Any Craps', type: 'anyCraps', where: '"ANY CRAPS" in center section', edge: pct(edges.anyCraps), pays: '7:1', note: 'One-roll. Wins on 2, 3, or 12. High edge.', rating: 'terrible' })
+      available.push({ name: 'Yo (Eleven)', type: 'yo', where: '"YO" in center section', edge: pct(edges.yo), pays: '15:1', note: 'One-roll. Wins only on 11.', rating: 'terrible' })
+      available.push({ name: 'Any 7', type: 'any7', where: '"ANY SEVEN" in center section', edge: pct(edges.any7), pays: '4:1', note: 'Worst bet on the table. Never bet this.', rating: 'terrible' })
     }
 
     // Only show if we have available bets to list
