@@ -1,73 +1,14 @@
 import { describe, it, expect } from 'vitest'
-import type { ActiveBet, BetResolution, DiceRoll, TableRules } from '../../app/utils/betTypes'
-import { crapsConfig } from '../../craps.config'
+import type { ActiveBet, DiceRoll, TableRules } from '../../app/utils/betTypes'
+import { resolveSingleBet } from '../../app/engine/resolution'
 
 /**
- * Come bet state machine lifecycle tests.
- * Tests the full Come bet journey from pending through established to resolution.
+ * The engine has no standalone resolveCome — come bets resolve through
+ * resolveSingleBet. Phase/point are irrelevant to come resolution, so pin
+ * POINT_PHASE / point 8 for all lifecycle cases.
  */
-
-const { payouts } = crapsConfig
-
-// ---- Payout helpers (same as source) ----
-function applyRatio(amountCents: number, ratio: [number, number]): number {
-  return Math.floor(amountCents * ratio[0] / ratio[1])
-}
-function applyPayoutRounding(cents: number, rounding: TableRules['payoutRounding']): number {
-  if (rounding === 'dollar') return Math.floor(cents / 100) * 100
-  if (rounding === 'quarter') return Math.floor(cents / 25) * 25
-  return cents
-}
-
-function calculatePayout(bet: ActiveBet, tableRules: TableRules): number {
-  const { type, amount } = bet
-  if (type === 'pass' || type === 'come') {
-    return amount + applyPayoutRounding(applyRatio(amount, payouts.passLine.win), tableRules.payoutRounding)
-  }
-  return amount
-}
-
-function makeResolution(
-  bet: ActiveBet,
-  outcome: BetResolution['outcome'],
-  payout: number,
-  description: string
-): BetResolution {
-  let netGain = 0
-  if (outcome === 'win') netGain = payout - bet.amount
-  else if (outcome === 'lose') netGain = -bet.amount
-  return { betId: bet.id, betType: bet.type, owner: bet.owner, outcome, payout, netGain, description }
-}
-
-function resolveCome(
-  bet: ActiveBet,
-  roll: DiceRoll,
-  tableRules: TableRules
-): BetResolution | null {
-  const { total } = roll
-
-  // Pending Come (no point)
-  if (bet.pointNumber === null) {
-    if (total === 7 || total === 11) {
-      const payout = calculatePayout(bet, tableRules)
-      return makeResolution(bet, 'win', payout, `Come wins on ${total}`)
-    }
-    if (total === 2 || total === 3 || total === 12) {
-      return makeResolution(bet, 'lose', 0, `Come loses on ${total}`)
-    }
-    return makeResolution(bet, 'point_established', 0, `Come point established on ${total}`)
-  }
-
-  // Established Come (has point)
-  if (total === bet.pointNumber) {
-    const payout = calculatePayout(bet, tableRules)
-    return makeResolution(bet, 'win', payout, `Come wins - ${bet.pointNumber} hit`)
-  }
-  if (total === 7) {
-    return makeResolution(bet, 'lose', 0, 'Come loses - seven out')
-  }
-
-  return null // no action on other numbers
+function resolveCome(bet: ActiveBet, roll: DiceRoll, tableRules: TableRules) {
+  return resolveSingleBet(bet, roll, 'POINT_PHASE', tableRules, 8)
 }
 
 // ---- Helpers ----
