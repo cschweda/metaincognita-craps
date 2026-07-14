@@ -37,10 +37,17 @@ export default defineNuxtConfig({
   icon: {
     provider: 'none',
     clientBundle: {
-      // Nuxt UI's <USelect>/<UCombobox> use lucide:check internally for the
-      // selected-item indicator; it isn't a literal string in our own
-      // source, so static `scan` can't discover it — list it explicitly.
-      icons: ['lucide:check'],
+      // Nuxt UI renders some icons internally, from appConfig.ui.icons.* — they are
+      // literal strings nowhere in OUR source, so static `scan` cannot discover them,
+      // and with `provider: 'none'` + `connect-src 'self'` a missed icon renders as
+      // nothing at all. List them explicitly:
+      //   lucide:check — <USelect>/<UCombobox> selected-item indicator
+      //   lucide:x     — <UModal>'s close button (the leave-confirm in default.vue,
+      //                  and table.vue). It ships today only because BotConfigurator
+      //                  incidentally names i-lucide-x; delete that one line and every
+      //                  modal here loses its × in production. This exact bug WAS live
+      //                  in flameout, which had no such lucky line.
+      icons: ['lucide:check', 'lucide:x'],
       scan: true
     }
   }
