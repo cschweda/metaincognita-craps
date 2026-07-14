@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Added
+
+- **The hub exit — a way back to the floor.** A gold **METAINCOGNITA** wordmark now sits at the far left of the top status bar on every route, linking to [metaincognita.com](https://metaincognita.com) — the floor where all nine Metaincognita games live. Until now the hub linked out to every game and not one of them linked home; a player deep in a session had no way back but the browser's back button. It is a real `<a href>`, opens in the **same tab** (an exit, not a side trip), is never hidden or gated, and **never confirms** — it destroys nothing, and the point is that you can always leave. Suite chrome, per METAINCOGNITA-GUIDELINES v1.2 §5.
+
 ### Bug Fixes
 - **Contract bet takedown**: Pass Line / Come bets could previously be removed via Take-Down mode even after a point was established. Now locked once a point is on, per MBS 3.7.
 - **Working toggle honored in point phase**: Toggling a bet OFF previously had no effect once the point phase started (the toggle was inert). Bet working status is now correctly honored during point phase.
