@@ -42,6 +42,15 @@ const hasActiveSession = computed(() => store.phase !== 'SETUP')
     <!-- Top status bar -->
     <nav class="h-9 flex items-center justify-between px-3 bg-neutral-900 border-b border-neutral-800 shrink-0 z-50">
       <div class="flex items-center gap-2">
+        <!-- Out of the simulator entirely, on every route including this app's
+             own index. Distinct from the "Back" button beside it, which only
+             returns to setup — and, from the table, confirms first because it
+             destroys the session. The hub exit destroys nothing and never asks. -->
+        <AppHubLink />
+        <span
+          class="h-4 w-px bg-neutral-800"
+          aria-hidden="true"
+        />
         <button
           v-if="!isSetup"
           class="flex items-center gap-1 text-xs text-neutral-400 hover:text-neutral-200 transition-colors"
