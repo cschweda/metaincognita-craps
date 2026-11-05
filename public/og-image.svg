@@ -1,0 +1,154 @@
+<svg width="1200" height="630" viewBox="0 0 1200 630" xmlns="http://www.w3.org/2000/svg">
+  <!-- Metaincognita branded background (design-system.md §8) + craps content layer.
+       Structure mirrors the canonical blackjack og-image.svg (navy diagonal gradient,
+       fine/major grids, dot overlay, vignette, corner registration marks, glowing title,
+       mono stat chips, bottom METAINCOGNITA rule); accent and content layer differ.
+       Every figure shown is sourced from the app: 44 bet types (README), house edges
+       from app/utils/zoneDescriptions.ts and app/composables/useAdvisor.ts.
+       Render: rsvg-convert -w 1200 -h 630 og-image.svg -o og-image.png -->
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#0a0c1a"/>
+      <stop offset="1" stop-color="#060810"/>
+    </linearGradient>
+    <pattern id="grid-fine" width="20" height="20" patternUnits="userSpaceOnUse">
+      <path d="M 20 0 L 0 0 0 20" fill="none" stroke="#1e2848" stroke-width="0.6" opacity="0.75"/>
+    </pattern>
+    <pattern id="grid-major" width="100" height="100" patternUnits="userSpaceOnUse">
+      <path d="M 100 0 L 0 0 0 100" fill="none" stroke="#283458" stroke-width="1.2"/>
+    </pattern>
+    <pattern id="dots" width="20" height="20" patternUnits="userSpaceOnUse">
+      <circle cx="10" cy="10" r="0.8" fill="#2a3460"/>
+    </pattern>
+    <radialGradient id="vignette" cx="0.5" cy="0.45" r="0.75">
+      <stop offset="0.55" stop-color="#000000" stop-opacity="0"/>
+      <stop offset="1" stop-color="#000000" stop-opacity="0.55"/>
+    </radialGradient>
+    <radialGradient id="felt" cx="0.5" cy="0.1" r="1">
+      <stop offset="0" stop-color="#0d7a48"/>
+      <stop offset="0.7" stop-color="#0a5c36"/>
+      <stop offset="1" stop-color="#07472a"/>
+    </radialGradient>
+    <linearGradient id="rail" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#78593a"/>
+      <stop offset="1" stop-color="#3d2713"/>
+    </linearGradient>
+    <linearGradient id="die" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#fbf8ee"/>
+      <stop offset="1" stop-color="#e7e0cb"/>
+    </linearGradient>
+    <radialGradient id="puck" cx="0.4" cy="0.35" r="0.7">
+      <stop offset="0" stop-color="#ffffff"/>
+      <stop offset="1" stop-color="#cfcfcf"/>
+    </radialGradient>
+    <filter id="glow" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="6" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+    <filter id="shadow" x="-30%" y="-30%" width="160%" height="160%">
+      <feDropShadow dx="0" dy="6" stdDeviation="7" flood-color="#000000" flood-opacity="0.5"/>
+    </filter>
+  </defs>
+
+  <!-- background stack -->
+  <rect width="1200" height="630" fill="url(#bg)"/>
+  <rect width="1200" height="630" fill="url(#grid-fine)"/>
+  <rect width="1200" height="630" fill="url(#grid-major)"/>
+  <rect width="1200" height="630" fill="url(#dots)"/>
+
+  <!-- ====================== content layer: craps table ====================== -->
+  <g transform="translate(0 -28)">
+  <!-- felt table segment (bottom-right) -->
+  <g>
+    <ellipse cx="760" cy="652" rx="540" ry="300" fill="url(#rail)"/>
+    <ellipse cx="760" cy="660" rx="518" ry="282" fill="url(#felt)"/>
+    <!-- pass line band -->
+    <ellipse cx="760" cy="660" rx="470" ry="236" fill="none" stroke="#f5f0e1" stroke-opacity="0.35" stroke-width="2"/>
+    <ellipse cx="760" cy="660" rx="420" ry="196" fill="none" stroke="#f5f0e1" stroke-opacity="0.35" stroke-width="2"/>
+    <text x="760" y="452" font-family="Georgia, 'Times New Roman', serif" font-size="26" font-weight="700" letter-spacing="9" fill="#d4a847" opacity="0.92" text-anchor="middle">PASS LINE</text>
+  </g>
+
+  <!-- the dice: 5 + 6, yo-eleven -->
+  <g filter="url(#shadow)" transform="translate(600 506) rotate(-11)">
+    <rect width="92" height="92" rx="16" fill="url(#die)" stroke="#d4a847" stroke-width="3"/>
+    <g fill="#1a1a1a">
+      <circle cx="24" cy="24" r="8.5"/><circle cx="68" cy="24" r="8.5"/>
+      <circle cx="46" cy="46" r="8.5"/>
+      <circle cx="24" cy="68" r="8.5"/><circle cx="68" cy="68" r="8.5"/>
+    </g>
+  </g>
+  <g filter="url(#shadow)" transform="translate(846 494) rotate(9)">
+    <rect width="92" height="92" rx="16" fill="url(#die)" stroke="#d4a847" stroke-width="3"/>
+    <g fill="#dc2626">
+      <circle cx="25" cy="21" r="8.5"/><circle cx="67" cy="21" r="8.5"/>
+      <circle cx="25" cy="46" r="8.5"/><circle cx="67" cy="46" r="8.5"/>
+      <circle cx="25" cy="71" r="8.5"/><circle cx="67" cy="71" r="8.5"/>
+    </g>
+  </g>
+
+  <!-- ON puck -->
+  <g filter="url(#shadow)" transform="translate(1040 470)">
+    <circle r="30" fill="url(#puck)" stroke="#1a1a1a" stroke-width="2"/>
+    <text y="8" font-family="Arial Black, Impact, sans-serif" font-size="21" font-weight="900" fill="#1a1a1a" text-anchor="middle">ON</text>
+  </g>
+
+  <!-- chip stack -->
+  <g transform="translate(470 540)">
+    <ellipse cx="0" cy="26" rx="40" ry="12" fill="#1a1a1a" stroke="#f5f0e1" stroke-opacity="0.4" stroke-width="2" stroke-dasharray="9 6"/>
+    <ellipse cx="0" cy="14" rx="40" ry="12" fill="#16a34a" stroke="#f5f0e1" stroke-opacity="0.45" stroke-width="2" stroke-dasharray="9 6"/>
+    <ellipse cx="0" cy="2" rx="40" ry="12" fill="#dc2626" stroke="#f5f0e1" stroke-opacity="0.5" stroke-width="2" stroke-dasharray="9 6"/>
+    <ellipse cx="0" cy="-10" rx="40" ry="12" fill="#d4a847" stroke="#f5f0e1" stroke-opacity="0.6" stroke-width="2" stroke-dasharray="9 6"/>
+  </g>
+
+  </g>
+
+  <!-- house-edge ladder motif (the advisor's ranking, right edge) -->
+  <g transform="translate(944 150)" opacity="0.9">
+    <text x="0" y="-12" font-family="'Fira Code', Menlo, monospace" font-size="13" fill="#64748b" letter-spacing="2">HOUSE EDGE</text>
+    <g font-family="'Fira Code', Menlo, monospace" font-size="13">
+      <text x="0" y="10" fill="#94a3b8">Odds</text><text x="196" y="10" fill="#6ee7b7" text-anchor="end">0.00%</text>
+      <text x="0" y="34" fill="#94a3b8">Don&#8217;t Pass</text><text x="196" y="34" fill="#6ee7b7" text-anchor="end">1.36%</text>
+      <text x="0" y="58" fill="#94a3b8">Pass Line</text><text x="196" y="58" fill="#6ee7b7" text-anchor="end">1.41%</text>
+      <text x="0" y="82" fill="#94a3b8">Any 7</text><text x="196" y="82" fill="#f87171" text-anchor="end">16.67%</text>
+    </g>
+    <line x1="0" y1="96" x2="196" y2="96" stroke="#283458" stroke-width="1"/>
+    <text x="0" y="116" font-family="'Fira Code', Menlo, monospace" font-size="14" fill="#d4a847">44 BETS RANKED</text>
+  </g>
+
+  <!-- title block -->
+  <g>
+    <text x="64" y="118" font-family="'Fira Code', Menlo, monospace" font-size="58" font-weight="700" fill="#d4a847" filter="url(#glow)">Craps Simulator</text>
+    <text x="66" y="162" font-family="-apple-system, 'SF Pro Display', 'Helvetica Neue', Arial, sans-serif" font-size="21" fill="#64748b" letter-spacing="1">Full table &#183; 44 bet types &#183; A real-time advisor that explains the math</text>
+    <text x="66" y="200" font-family="-apple-system, 'SF Pro Display', 'Helvetica Neue', Arial, sans-serif" font-size="15" fill="#a1a1aa" letter-spacing="5">EVERY BET RANKED. EVERY ROLL COUNTED. NO SUCKER BETS.</text>
+  </g>
+
+  <!-- mono stat chips -->
+  <g font-family="'Fira Code', Menlo, monospace" font-size="15">
+    <rect x="66" y="232" width="176" height="34" rx="8" fill="#10182e" stroke="#d4a847" stroke-opacity="0.6"/>
+    <text x="80" y="255" fill="#d4a847">Pass Line 1.41%</text>
+    <rect x="256" y="232" width="148" height="34" rx="8" fill="#10182e" stroke="#7ee0a6" stroke-opacity="0.6"/>
+    <text x="270" y="255" fill="#7ee0a6">Odds 0% edge</text>
+    <rect x="418" y="232" width="164" height="34" rx="8" fill="#10182e" stroke="#f5f0e1" stroke-opacity="0.6"/>
+    <text x="432" y="255" fill="#f5f0e1">&#967;&#178;-tested dice</text>
+  </g>
+
+  <!-- vignette over everything except chrome -->
+  <rect width="1200" height="630" fill="url(#vignette)"/>
+
+  <!-- corner registration marks -->
+  <g stroke="#3a4570" stroke-width="2" fill="none">
+    <path d="M 24 44 L 24 24 L 44 24"/>
+    <path d="M 1156 24 L 1176 24 L 1176 44"/>
+    <path d="M 1176 586 L 1176 606 L 1156 606"/>
+    <path d="M 44 606 L 24 606 L 24 586"/>
+  </g>
+
+  <!-- bottom branding -->
+  <rect x="64" y="594" width="120" height="4" fill="#d4a847"/>
+  <line x1="0" y1="600" x2="1200" y2="600" stroke="#1e2848" stroke-width="1"/>
+  <text x="64" y="621" font-family="'Fira Code', Menlo, monospace" font-size="13" fill="#3a4570" letter-spacing="6">METAINCOGNITA</text>
+  <text x="1136" y="621" font-family="'Fira Code', Menlo, monospace" font-size="13" fill="#3a4570" letter-spacing="2" text-anchor="end">CASINO SIMULATOR SUITE</text>
+</svg>

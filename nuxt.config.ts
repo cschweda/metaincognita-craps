@@ -10,8 +10,23 @@ export default defineNuxtConfig({
   app: {
     head: {
       title: 'Craps Simulator',
+      // Static <head> — with ssr: false this is the only meta that reaches
+      // link-preview crawlers (useSeoMeta in app.vue runs client-side only).
       meta: [
-        { name: 'description', content: 'Browser-based casino craps training tool' }
+        { name: 'description', content: 'Browser-based casino craps training tool. Learn which bets are mathematically sound and which are sucker bets.' },
+        { property: 'og:type', content: 'website' },
+        { property: 'og:url', content: 'https://craps.metaincognita.com/' },
+        { property: 'og:title', content: 'Craps Simulator' },
+        { property: 'og:description', content: 'A full visual craps table with 44 bet types and a real-time advisor that ranks every bet by house edge and explains the math in plain English.' },
+        { property: 'og:image', content: 'https://craps.metaincognita.com/og-image.png' },
+        { property: 'og:image:width', content: '1200' },
+        { property: 'og:image:height', content: '630' },
+        { property: 'og:image:alt', content: 'Craps Simulator: two dice showing five and six on an emerald felt table, with a house-edge ladder from Odds at 0% to Any 7 at 16.67%.' },
+        { name: 'twitter:card', content: 'summary_large_image' },
+        { name: 'twitter:title', content: 'Craps Simulator' },
+        { name: 'twitter:description', content: 'A full visual craps table with 44 bet types and a real-time advisor that ranks every bet by house edge and explains the math in plain English.' },
+        { name: 'twitter:image', content: 'https://craps.metaincognita.com/og-image.png' },
+        { name: 'twitter:image:alt', content: 'Craps Simulator: two dice showing five and six on an emerald felt table, with a house-edge ladder from Odds at 0% to Any 7 at 16.67%.' }
       ]
     }
   },
