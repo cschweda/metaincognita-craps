@@ -162,6 +162,50 @@ export function canRemoveBet(bet: ActiveBet, tablePoint: number | null): { allow
   return { allowed: true, reason: '' }
 }
 
+/** Units a multi-number proposition is split across (it must divide evenly). */
+const PROP_UNITS: Partial<Record<BetType, number>> = { crapsEleven: 2, horn: 4, hornHigh: 5 }
+
+const CENTER_ONE_ROLL: BetType[] = [
+  'any7', 'anyCraps', 'aces', 'boxcars', 'aceDeuce', 'yo', 'crapsEleven', 'horn', 'hornHigh', 'hopEasy', 'hopHard'
+]
+
+/** The proposition bets in the centre of the layout, worked by the stickman. */
+export function isCenterBet(type: BetType): boolean {
+  return isHardwayBet(type) || CENTER_ONE_ROLL.includes(type)
+}
+
+/**
+ * Smallest unit accepted on a centre bet. Casinos do not hold proposition
+ * bets to the table minimum — a $10 table takes $1 hardways — though the
+ * unit does grow with the stakes.
+ */
+export function getPropUnit(tableRules: TableRules): number {
+  const { minBet } = tableRules
+  if (minBet <= 1000) return Math.min(minBet, 100)
+  if (minBet <= 2500) return 500
+  if (minBet <= 10000) return 2500
+  return 10000
+}
+
+/** Minimum wager for a bet type: the table minimum, except in the centre. */
+export function getMinimumBet(type: BetType, tableRules: TableRules): number {
+  if (!isCenterBet(type)) return tableRules.minBet
+  return getPropUnit(tableRules) * (PROP_UNITS[type] ?? 1)
+}
+
+/**
+ * Turn "the chip in my hand" into an amount this bet can take. Horn, Horn
+ * High and C&E are split evenly across 4, 5 and 2 numbers, so they only come
+ * in whole-dollar multiples of that; the chip is rounded UP to the next one
+ * ($10 on the Horn becomes $12 — $3 a number). Other bets take the chip as is.
+ */
+export function fitBetAmount(type: BetType, amount: number): number {
+  const units = PROP_UNITS[type]
+  if (!units) return amount
+  const step = units * 100
+  return Math.ceil(amount / step) * step
+}
+
 /**
  * Bets a real dealer leaves up after paying them: the player collects the
  * winnings and the wager keeps working until it loses or is taken down.

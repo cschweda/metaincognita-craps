@@ -2,7 +2,9 @@ import { describe, it, expect } from 'vitest'
 import type { ActiveBet, BetResolution, BetType, TableRules } from '../../app/utils/betTypes'
 import type { BotAction, BotSeat, BotTable } from '../../app/engine/bots'
 import { botActionsAfterRoll, botActionsBeforeRoll, martingaleBet, nextLossStreak } from '../../app/engine/bots'
-import { canToggleWorking, listOddsRoom, staysUpAfterWin } from '../../app/engine/betting'
+import {
+  canToggleWorking, fitBetAmount, getMinimumBet, getPropUnit, isCenterBet, listOddsRoom, staysUpAfterWin
+} from '../../app/engine/betting'
 import { crapsConfig } from '../../craps.config'
 
 const rules: TableRules = {
@@ -198,14 +200,21 @@ describe('Press Patricia — press every win', () => {
 })
 
 describe('Prop Bet Pete — sucker bets only', () => {
-  it('keeps all four hardways, a horn and any craps up', () => {
-    expect(placed(botActionsBeforeRoll(seat('props_only'), table('POINT_PHASE', 4))))
-      .toEqual(['hard4 1000', 'hard6 1000', 'hard8 1000', 'hard10 1000', 'horn 1200', 'anyCraps 1000'])
+  it('keeps all four hardways, a horn and any craps up — $9 in $1 units at a $10 table', () => {
+    const actions = botActionsBeforeRoll(seat('props_only'), table('POINT_PHASE', 4))
+    expect(placed(actions)).toEqual(['hard4 100', 'hard6 100', 'hard8 100', 'hard10 100', 'horn 400', 'anyCraps 100'])
+    expect(actions.reduce((sum, a) => sum + (a.do === 'place' ? a.amount : 0), 0)).toBe(900)
+  })
+
+  it('bets bigger units at bigger tables', () => {
+    const t = { ...table('POINT_PHASE', 4), tableRules: { ...rules, minBet: 10000, maxBet: 1000000 } }
+    expect(placed(botActionsBeforeRoll(seat('props_only', { bankroll: 500000 }), t)))
+      .toEqual(['hard4 2500', 'hard6 2500', 'hard8 2500', 'hard10 2500', 'horn 10000', 'anyCraps 2500'])
   })
 
   it('skips what it can no longer afford', () => {
-    const actions = botActionsBeforeRoll(seat('props_only', { bankroll: 2500 }), table('POINT_PHASE', 4))
-    expect(placed(actions)).toEqual(['hard4 1000', 'hard6 1000'])
+    const actions = botActionsBeforeRoll(seat('props_only', { bankroll: 250 }), table('POINT_PHASE', 4))
+    expect(placed(actions)).toEqual(['hard4 100', 'hard6 100'])
   })
 })
 
@@ -272,5 +281,49 @@ describe('which bets stay up, and which can be called off', () => {
   it('only bets whose working flag is honoured can be toggled', () => {
     for (const type of ['place6', 'buy4', 'hard8', 'passOdds', 'comeOdds'] as const) expect(canToggleWorking(type)).toBe(true)
     for (const type of ['pass', 'come', 'lay4', 'dontPassOdds', 'dontComeOdds', 'field', 'big6'] as const) expect(canToggleWorking(type)).toBe(false)
+  })
+})
+
+describe('centre-table minimums', () => {
+  const at = (minBet: number): TableRules => ({ ...rules, minBet })
+
+  it('knows which bets are worked from the centre', () => {
+    for (const type of ['hard6', 'any7', 'anyCraps', 'aces', 'boxcars', 'aceDeuce', 'yo', 'crapsEleven', 'horn', 'hornHigh', 'hopEasy', 'hopHard'] as const) {
+      expect(isCenterBet(type)).toBe(true)
+    }
+    for (const type of ['pass', 'come', 'place6', 'buy4', 'lay10', 'field', 'big6', 'passOdds'] as const) {
+      expect(isCenterBet(type)).toBe(false)
+    }
+  })
+
+  it('the prop unit grows with the stakes and never exceeds the table minimum', () => {
+    expect([500, 1000, 2500, 10000, 50000].map(min => getPropUnit(at(min)))).toEqual([100, 100, 500, 2500, 10000])
+    expect(getPropUnit(at(50))).toBe(50)
+  })
+
+  it('centre bets take the prop unit; everything else the table minimum', () => {
+    expect(getMinimumBet('hard8', at(1000))).toBe(100)
+    expect(getMinimumBet('any7', at(2500))).toBe(500)
+    expect(getMinimumBet('place6', at(1000))).toBe(1000)
+    expect(getMinimumBet('field', at(1000))).toBe(1000)
+  })
+
+  it('multi-number props need one unit per number', () => {
+    expect(getMinimumBet('crapsEleven', at(1000))).toBe(200)
+    expect(getMinimumBet('horn', at(1000))).toBe(400)
+    expect(getMinimumBet('hornHigh', at(1000))).toBe(500)
+    expect(getMinimumBet('horn', at(2500))).toBe(2000)
+  })
+
+  it('a chip is rounded up to an amount a multi-number prop can split evenly', () => {
+    expect(fitBetAmount('horn', 1000)).toBe(1200)
+    expect(fitBetAmount('horn', 500)).toBe(800)
+    expect(fitBetAmount('horn', 10000)).toBe(10000)
+    expect(fitBetAmount('hornHigh', 1000)).toBe(1000)
+    expect(fitBetAmount('hornHigh', 2500)).toBe(2500)
+    expect(fitBetAmount('crapsEleven', 500)).toBe(600)
+    // single-number bets take the chip as it is
+    expect(fitBetAmount('yo', 500)).toBe(500)
+    expect(fitBetAmount('pass', 2500)).toBe(2500)
   })
 })

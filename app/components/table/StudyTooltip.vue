@@ -7,6 +7,8 @@ const props = defineProps<{
   y: number
   hasBetAmount: number
   disabled: boolean
+  /** The game's own reason the bet is unavailable, when it has one. */
+  reason?: string
   gamePhase: string
 }>()
 
@@ -26,6 +28,8 @@ const explanation = computed((): { title: string, body: string, status: string, 
       status = 'Only available during the point phase.'
     } else if (phase === 'POINT_PHASE' && ['pass-line', 'dont-pass'].includes(props.zoneId)) {
       status = 'Only available on the come-out roll.'
+    } else if (props.reason) {
+      status = `Not available right now: ${props.reason}.`
     } else {
       status = 'Not available right now.'
     }
