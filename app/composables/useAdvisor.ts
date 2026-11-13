@@ -96,7 +96,10 @@ export function useAdvisor() {
     }
 
     // Point just established
-    if (roll && phase === 'POINT_PHASE' && point && store.shooterRollCount <= 1) {
+    // In the point phase the last roll can only equal the point if it is the
+    // roll that SET it (rolling the point again ends the phase). Keying this
+    // on the shooter's roll count hid it whenever a come-out took 2+ rolls.
+    if (roll && phase === 'POINT_PHASE' && point && roll.total === point) {
       const ways = WAYS[point] ?? 0
       const prob = ((ways / (ways + 6)) * 100).toFixed(1)
       recs.push({
@@ -547,7 +550,9 @@ export function useAdvisor() {
     if (stats.totalWagered > 0) {
       const actualEdge = ((Math.abs(stats.totalProfitLoss) / stats.totalWagered) * 100).toFixed(2)
       const direction = stats.totalProfitLoss >= 0 ? 'up' : 'down'
-      insights.push(`Session: ${direction} ${fc(Math.abs(stats.totalProfitLoss))} on ${fc(stats.totalWagered)} wagered (${actualEdge}% actual edge).`)
+      // "House edge" only describes money lost; being ahead is a return.
+      const label = stats.totalProfitLoss >= 0 ? 'return so far' : 'lost to the house so far'
+      insights.push(`Session: ${direction} ${fc(Math.abs(stats.totalProfitLoss))} on ${fc(stats.totalWagered)} wagered (${actualEdge}% ${label}).`)
     }
 
     if (stats.longestShooterRolls >= 5) {

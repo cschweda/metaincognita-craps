@@ -1,4 +1,4 @@
-import type { ActiveBet, TableRules } from '../utils/betTypes'
+import type { ActiveBet, BetType, TableRules } from '../utils/betTypes'
 import { betTypeToNumber, isBuyBet, isLayBet, isPlaceBet, isHardwayBet } from '../utils/betTypes'
 import { crapsConfig } from '../../craps.config'
 
@@ -16,6 +16,14 @@ export function applyRatio(amountCents: number, ratio: [number, number]): number
  */
 export function calculateVig(amountCents: number): number {
   return Math.floor(amountCents * 5 / 100)
+}
+
+/**
+ * Vig collected up front when a bet is placed (and refunded if the bet comes
+ * down without action). Only Buy bets on an 'on_bet' table pay one.
+ */
+export function getUpfrontVig(type: BetType, amountCents: number, tableRules: TableRules): number {
+  return isBuyBet(type) && tableRules.buyVigTiming === 'on_bet' ? calculateVig(amountCents) : 0
 }
 
 /**
@@ -98,29 +106,28 @@ export function calculatePayout(bet: ActiveBet, tableRules: TableRules): number 
     return amount + winnings
   }
 
-  // --- Buy bets (true odds minus vig) ---
+  // --- Buy bets (true odds, 5% vig on the WAGER per MBS 3.4.10) ---
   if (isBuyBet(type) && num !== null) {
     const ratio = payouts.buy[num]
     if (!ratio) return amount
     const winnings = applyRatio(amount, ratio)
-    if (tableRules.buyVigTiming === 'on_win') {
-      const vig = calculateVig(winnings)
-      return amount + winnings - vig
-    }
-    // vig already paid on placement
-    return amount + winnings
+    // 'on_bet': the vig was already collected at placement (getUpfrontVig).
+    // 'on_win': the same vig — 5% of the wager, NOT of the winnings — is
+    // collected out of the payout. Charging it on the winnings doubled the
+    // cost of a Buy 4/10 and broke the documented 1.67% house edge.
+    const vig = tableRules.buyVigTiming === 'on_win' ? calculateVig(amount) : 0
+    return amount + winnings - vig
   }
 
-  // --- Lay bets (inverse true odds minus vig on win) ---
+  // --- Lay bets (inverse true odds, 5% vig on the amount WON per MBS 3.4.11) ---
   if (isLayBet(type) && num !== null) {
     const ratio = payouts.lay[num]
     if (!ratio) return amount
     const winnings = applyRatio(amount, ratio)
-    if (tableRules.buyVigTiming === 'on_win') {
-      const vig = calculateVig(winnings)
-      return amount + winnings - vig
-    }
-    return amount + winnings
+    // Lay vig is always collected at resolution. buyVigTiming governs Buy
+    // bets only; nothing charges a Lay at placement, so skipping the vig
+    // here under 'on_bet' made every Lay a free, zero-edge bet.
+    return amount + winnings - calculateVig(winnings)
   }
 
   // --- Hardways ---
@@ -231,4 +238,15 @@ export function getMaxOdds(flatBetAmount: number, pointNumber: number, oddsMulti
   const multiple = multiples[pointNumber]
   if (multiple === undefined) return 0
   return flatBetAmount * multiple
+}
+
+/**
+ * Most a don't-side bettor may lay behind a flat bet: enough to WIN what a
+ * right-side bettor could take in odds (e.g. 3x on the 4 lays 6x to win 3x).
+ */
+export function getMaxLayOdds(flatBetAmount: number, pointNumber: number, oddsMultipleKey: string): number {
+  const maxWin = getMaxOdds(flatBetAmount, pointNumber, oddsMultipleKey)
+  const ratio = payouts.dontOdds[pointNumber]
+  if (!ratio) return 0
+  return Math.floor(maxWin * ratio[1] / ratio[0])
 }

@@ -2,12 +2,11 @@ import type { DiceRoll, BetResolution, GamePhase } from '~/utils/betTypes'
 import { isPlaceBet, isBuyBet, isHardwayBet } from '~/utils/betTypes'
 import {
   resolveRoll,
-  isBetWorking,
   transition,
   getStickmanCall
 } from '~/engine/resolution'
-import { getDefaultWorking } from '~/engine/betting'
-import { calculateVig } from '~/engine/payouts'
+import { findOrphanedOdds, getDefaultWorking } from '~/engine/betting'
+import { getUpfrontVig } from '~/engine/payouts'
 import { rollDice } from '~/engine/rng'
 
 export function useGameLoop() {
@@ -83,30 +82,10 @@ export function useGameLoop() {
       store.applyResolutions(actionableResolutions)
     }
 
-    // 6. Return orphaned OFF odds whose parent bet was just resolved
-    // (e.g., Come Odds OFF on come-out when 7 rolls and parent Come loses)
-    const orphanedOdds = store.activeBets.filter((b) => {
-      if (b.status === 'resolved') return false
-      if (b.type === 'comeOdds' || b.type === 'dontComeOdds') {
-        // Check if parent come/dontCome with same pointNumber was just resolved
-        const parentType = b.type === 'comeOdds' ? 'come' : 'dontCome'
-        const parentResolved = actionableResolutions.some(
-          r => r.betType === parentType && r.owner === b.owner
-            && (r.outcome === 'win' || r.outcome === 'lose')
-        )
-        return parentResolved && !isBetWorking(b, currentPhase)
-      }
-      if (b.type === 'passOdds' || b.type === 'dontPassOdds') {
-        const parentType = b.type === 'passOdds' ? 'pass' : 'dontPass'
-        const parentResolved = actionableResolutions.some(
-          r => r.betType === parentType && r.owner === b.owner
-            && (r.outcome === 'win' || r.outcome === 'lose')
-        )
-        return parentResolved && !isBetWorking(b, currentPhase)
-      }
-      return false
-    })
-    for (const bet of orphanedOdds) {
+    // 6. Return odds whose flat bet just resolved out from under them
+    // (e.g. Come Odds that were OFF on a come-out roll when the 7 took the
+    // Come bet). Matched by point, so odds behind OTHER come points stay up.
+    for (const bet of findOrphanedOdds(store.activeBets)) {
       store.removeBet(bet.id)
     }
 
@@ -123,10 +102,7 @@ export function useGameLoop() {
       // was OFF — off bets are not at risk, so return them to their owners.
       const offBets = store.activeBets.filter(b => b.status !== 'resolved')
       for (const bet of offBets) {
-        const vigRefund = isBuyBet(bet.type) && store.tableRules.buyVigTiming === 'on_bet'
-          ? calculateVig(bet.amount)
-          : 0
-        store.removeBet(bet.id, vigRefund)
+        store.removeBet(bet.id, getUpfrontVig(bet.type, bet.amount, store.tableRules))
       }
 
       store.advanceShooter()

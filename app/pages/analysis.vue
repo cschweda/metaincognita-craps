@@ -23,7 +23,14 @@ const rollDistribution = computed(() => {
   return counts
 })
 
-const totalRolls = computed(() => sessionStats.value.rollsWitnessed || 1)
+// The distribution is counted from rollHistory, which keeps only the most
+// recent rolls — so that, not the lifetime roll count, is the denominator.
+// (Dividing by every roll ever witnessed shrank all the bars once a session
+// outgrew the history window.)
+const sampleSize = computed(() => rollHistory.value.length)
+const totalRolls = computed(() => sampleSize.value || 1)
+/** Bars are scaled so the tallest expected value (7, at 16.7%) sits at 60%. */
+const barWidth = (fraction: number) => Math.min(100, fraction * 100 * 3.6) + '%'
 
 // Expected probabilities (out of 36)
 const expectedProbs: Record<number, number> = {
@@ -110,12 +117,12 @@ const betTypeEntries = computed(() => {
                 <div
                   class="h-full rounded transition-all duration-300"
                   :class="n === 7 ? 'bg-red-500/70' : 'bg-emerald-500/50'"
-                  :style="{ width: ((rollDistribution[n]! / totalRolls) * 100 * 3.6) + '%' }"
+                  :style="{ width: barWidth(rollDistribution[n]! / totalRolls) }"
                 />
                 <!-- Expected line -->
                 <div
                   class="absolute top-0 h-full w-px bg-amber-400/50"
-                  :style="{ left: ((expectedProbs[n]! / 36) * 100 * 3.6) + '%' }"
+                  :style="{ left: barWidth(expectedProbs[n]! / 36) }"
                   :title="'Expected: ' + ((expectedProbs[n]! / 36) * 100).toFixed(1) + '%'"
                 />
               </div>
@@ -125,7 +132,7 @@ const betTypeEntries = computed(() => {
               </span>
             </div>
             <p class="text-[10px] text-neutral-600 pt-1">
-              Gold line = expected probability. Bar = actual frequency.
+              Gold line = expected probability. Bar = actual frequency over the last {{ sampleSize }} roll{{ sampleSize === 1 ? '' : 's' }}.
             </p>
           </div>
         </div>

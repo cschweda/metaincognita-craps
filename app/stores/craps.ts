@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia'
 import type { GamePhase, DiceRoll, ActiveBet, BetResolution, TableRules, PlayerState, SessionStats } from '~/utils/betTypes'
 import { resetBetIdCounter, syncBetIdCounter } from '~/utils/betTypes'
+import { parseSession } from '~/utils/session'
 import { crapsConfig } from '~~/craps.config'
 
 export const useCrapsStore = defineStore('craps', {
@@ -56,7 +57,12 @@ export const useCrapsStore = defineStore('craps', {
     stickmanCallType: '' as '' | 'natural' | 'craps' | 'point' | 'winner' | 'sevenout' | 'neutral',
 
     // Selected chip denomination (cents)
-    selectedChipValue: 1000
+    selectedChipValue: 1000,
+
+    // True from the moment the dice leave the shooter's hand until the roll
+    // is resolved. "No more bets": nothing may be placed or taken down in
+    // that window, because the outcome is already decided. Never persisted.
+    diceInAir: false
   }),
 
   getters: {
@@ -140,6 +146,7 @@ export const useCrapsStore = defineStore('craps', {
       this.currentRoll = null
       this.rollHistory = []
       this.dontBetRemovedThisCycle = new Set()
+      this.diceInAir = false
       this.sessionStats = {
         rollsWitnessed: 0,
         pointsEstablished: 0,
@@ -178,11 +185,16 @@ export const useCrapsStore = defineStore('craps', {
       }
     },
 
-    addBet(bet: ActiveBet) {
+    /**
+     * Put a bet on the table. `upfrontVig` is a fee collected on top of the
+     * wager (Buy bets on a vig-on-bet table); it is a real cost, so it counts
+     * against profit/loss the moment it is paid.
+     */
+    addBet(bet: ActiveBet, upfrontVig = 0) {
       this.activeBets.push(bet)
       const player = this.players.find(p => p.id === bet.owner)
       if (player) {
-        player.bankroll -= bet.amount
+        player.bankroll -= bet.amount + upfrontVig
       }
       this.sessionStats.totalWagered += bet.amount
       const stats = this.sessionStats.betTypeStats[bet.type] ??= {
@@ -190,16 +202,34 @@ export const useCrapsStore = defineStore('craps', {
       }
       stats.timesPlaced++
       stats.totalWagered += bet.amount
+      stats.netProfitLoss -= upfrontVig
+      if (player?.isHero) this.sessionStats.totalProfitLoss -= upfrontVig
     },
 
+    /**
+     * Take a bet off the table without action, returning the wager (and any
+     * up-front vig) to its owner. Because the bet never faced a roll's
+     * outcome, it is also backed out of the wagering stats — otherwise
+     * putting a chip down and picking it back up inflates "total wagered"
+     * and dilutes the session's measured house edge.
+     */
     removeBet(betId: string, refundVig?: number) {
       const idx = this.activeBets.findIndex(b => b.id === betId)
       if (idx === -1) return
       const bet = this.activeBets[idx]!
+      const refund = refundVig ?? 0
       const player = this.players.find(p => p.id === bet.owner)
       if (player) {
-        player.bankroll += bet.amount + (refundVig ?? 0)
+        player.bankroll += bet.amount + refund
       }
+      this.sessionStats.totalWagered = Math.max(0, this.sessionStats.totalWagered - bet.amount)
+      const stats = this.sessionStats.betTypeStats[bet.type]
+      if (stats) {
+        stats.timesPlaced = Math.max(0, stats.timesPlaced - 1)
+        stats.totalWagered = Math.max(0, stats.totalWagered - bet.amount)
+        stats.netProfitLoss += refund
+      }
+      if (player?.isHero) this.sessionStats.totalProfitLoss += refund
       if (bet.type === 'dontPass' || bet.type === 'dontCome') {
         this.dontBetRemovedThisCycle.add(`${bet.owner}-${bet.type}`)
       }
@@ -228,9 +258,6 @@ export const useCrapsStore = defineStore('craps', {
         if (player.bankrollHistory.length > crapsConfig.stats.bankrollHistorySize) {
           player.bankrollHistory.splice(0, player.bankrollHistory.length - crapsConfig.stats.bankrollHistorySize)
         }
-        if (player.bankroll <= 0) {
-          player.isBusted = true
-        }
 
         const stats = this.sessionStats.betTypeStats[bet.type]
         if (stats) {
@@ -245,6 +272,14 @@ export const useCrapsStore = defineStore('craps', {
       }
       // Clean up resolved bets
       this.activeBets = this.activeBets.filter(b => b.status !== 'resolved')
+
+      // Busted = no chips in the rack AND nothing left riding on the table.
+      // Judged once, after every resolution of the roll has been paid — a
+      // player whose last chips are on the felt is still in the game, and a
+      // loss followed by a win on the same roll is not a bust.
+      for (const player of this.players) {
+        player.isBusted = player.bankroll <= 0 && !this.activeBets.some(b => b.owner === player.id)
+      }
     },
 
     advanceShooter() {
@@ -272,12 +307,13 @@ export const useCrapsStore = defineStore('craps', {
           rollNumber: this.rollNumber,
           shooterRollCount: this.shooterRollCount,
           currentRoll: this.currentRoll,
-          rollHistory: this.rollHistory.slice(0, 50),
+          rollHistory: this.rollHistory,
           activeBets: this.activeBets,
           tableRules: this.tableRules,
           players: this.players,
           sessionStats: this.sessionStats,
-          selectedChipValue: this.selectedChipValue
+          selectedChipValue: this.selectedChipValue,
+          dontBetRemovedThisCycle: [...this.dontBetRemovedThisCycle]
         }
         localStorage.setItem(crapsConfig.storage.localStorageKey, JSON.stringify(data))
       } catch {
@@ -289,8 +325,9 @@ export const useCrapsStore = defineStore('craps', {
       try {
         const raw = localStorage.getItem(crapsConfig.storage.localStorageKey)
         if (!raw) return false
-        const data = JSON.parse(raw)
-        if (!data.phase || !data.players?.length) {
+        // Stored state is untrusted: validate and rebuild it field by field.
+        const data = parseSession(JSON.parse(raw))
+        if (!data) {
           localStorage.removeItem(crapsConfig.storage.localStorageKey)
           return false
         }
@@ -301,17 +338,20 @@ export const useCrapsStore = defineStore('craps', {
         this.rollNumber = data.rollNumber
         this.shooterRollCount = data.shooterRollCount
         this.currentRoll = data.currentRoll
-        this.rollHistory = data.rollHistory ?? []
-        this.activeBets = data.activeBets ?? []
-        syncBetIdCounter(this.activeBets.map((b: ActiveBet) => b.id))
+        this.rollHistory = data.rollHistory
+        this.activeBets = data.activeBets
+        syncBetIdCounter(this.activeBets.map(b => b.id))
         this.tableRules = data.tableRules
         this.players = data.players
         this.sessionStats = data.sessionStats
-        this.selectedChipValue = data.selectedChipValue ?? data.tableRules.minBet
-        this.dontBetRemovedThisCycle = new Set()
+        this.selectedChipValue = data.selectedChipValue
+        this.dontBetRemovedThisCycle = new Set(data.dontBetRemovedThisCycle)
+        this.diceInAir = false
         return true
       } catch {
-        localStorage.removeItem(crapsConfig.storage.localStorageKey)
+        try {
+          localStorage.removeItem(crapsConfig.storage.localStorageKey)
+        } catch { /* storage unavailable — nothing to clean up */ }
         return false
       }
     },

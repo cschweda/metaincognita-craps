@@ -116,7 +116,7 @@ describe('Field payouts', () => {
 })
 
 describe('Buy bet payout with vig on win', () => {
-  it('Buy 4, $20 bet, vig on win: true odds 2:1 minus 5% vig on winnings', () => {
+  it('Buy 4, $20 bet, vig on win: true odds 2:1 minus 5% vig on the WAGER', () => {
     const bet: ActiveBet = {
       id: 'test-buy',
       type: 'buy4',
@@ -132,10 +132,10 @@ describe('Buy bet payout with vig on win', () => {
     }
     const rules: TableRules = { ...defaultRules, buyVigTiming: 'on_win' }
     // Winnings = applyRatio(2000, [2,1]) = 4000
-    // Vig = floor(4000 * 5/100) = 200
-    // Total payout = 2000 + 4000 - 200 = 5800
+    // Vig = 5% of the $20 wager (MBS 3.4.10) = floor(2000 * 5/100) = 100
+    // Total payout = 2000 + 4000 - 100 = 5900
     const payout = calculatePayout(bet, rules)
-    expect(payout).toBe(5800)
+    expect(payout).toBe(5900)
   })
 
   it('Buy 4, $20 bet, vig on bet: no vig deducted from payout', () => {
