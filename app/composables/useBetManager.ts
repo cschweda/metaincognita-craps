@@ -9,9 +9,9 @@ import {
   isOddsBet,
   CONTRACT_BETS
 } from '~/utils/betTypes'
-import { crapsConfig } from '~~/craps.config'
-import { calculateVig, getMaxOdds } from '~/engine/payouts'
-import { canRemoveBet, getDefaultWorking } from '~/engine/betting'
+import { formatCents } from '~/utils/format'
+import { getUpfrontVig } from '~/engine/payouts'
+import { canRemoveBet, findOrphanedOdds, getDefaultWorking, isOddsType, resolveOddsTarget } from '~/engine/betting'
 
 interface ValidationResult {
   valid: boolean
@@ -37,7 +37,8 @@ export function useBetManager() {
     type: BetType,
     amount: number,
     owner: string,
-    gameState: GameState
+    gameState: GameState,
+    targetPoint?: number | null
   ): ValidationResult {
     const { phase, point, activeBets, tableRules, dontBetRemovedThisCycle } = gameState
     const player = store.players.find(p => p.id === owner)
@@ -65,85 +66,15 @@ export function useBetManager() {
       }
     }
 
-    // Place/Buy bets need a point established (point phase)
-    if ((isPlaceBet(type) || isBuyBet(type)) && phase === 'COME_OUT') {
-      // Some casinos allow place bets on come-out (they're just OFF by default).
-      // We allow placement but they'll be off unless toggled working.
-    }
-
+    // Place/Buy bets may go up on the come-out; they are simply OFF by default.
     // Lay bets can be placed anytime
     // One-roll bets can be placed anytime
 
-    // Odds bets require a parent flat bet
-    if (type === 'passOdds') {
-      const parentPass = activeBets.find(
-        b => b.owner === owner && b.type === 'pass' && b.status !== 'resolved'
-      )
-      if (!parentPass) {
-        return { valid: false, reason: 'Must have a Pass Line bet to place Pass Odds' }
-      }
-      if (!point) {
-        return { valid: false, reason: 'Pass Odds can only be placed after a point is established' }
-      }
-      const maxOdds = getMaxOdds(parentPass.amount, point, tableRules.oddsMultiple)
-      if (amount > maxOdds) {
-        return { valid: false, reason: `Maximum odds for this point is ${maxOdds} cents` }
-      }
-    }
-
-    if (type === 'dontPassOdds') {
-      const parentDontPass = activeBets.find(
-        b => b.owner === owner && b.type === 'dontPass' && b.status !== 'resolved'
-      )
-      if (!parentDontPass) {
-        return { valid: false, reason: 'Must have a Don\'t Pass bet to place Don\'t Pass Odds' }
-      }
-      if (!point) {
-        return { valid: false, reason: 'Don\'t Pass Odds can only be placed after a point is established' }
-      }
-      // Lay odds max: sized so the PAYOUT doesn't exceed the pass odds max
-      // (i.e., you can lay enough to WIN the same as a pass odds bettor)
-      const maxPassOdds = getMaxOdds(parentDontPass.amount, point, tableRules.oddsMultiple)
-      const dontOddsRatio = crapsConfig.payouts.dontOdds[point]
-      // Max lay = maxPassOdds / (payout ratio) so winnings ≤ maxPassOdds
-      // e.g., point 4: pass max = 3x flat. Lay ratio is 1:2. Max lay = 3x flat / (1/2) = 6x flat
-      const maxLay = dontOddsRatio
-        ? Math.floor(maxPassOdds * dontOddsRatio[1] / dontOddsRatio[0])
-        : maxPassOdds
-      if (amount > maxLay) {
-        return { valid: false, reason: `Maximum Don't Pass Odds for this point is ${maxLay} cents` }
-      }
-    }
-
-    if (type === 'comeOdds') {
-      // Must have an established come bet (with pointNumber set)
-      const parentCome = activeBets.find(
-        b => b.owner === owner && b.type === 'come' && b.pointNumber !== null && b.status !== 'resolved'
-      )
-      if (!parentCome) {
-        return { valid: false, reason: 'Must have an established Come bet to place Come Odds' }
-      }
-      const maxOdds = getMaxOdds(parentCome.amount, parentCome.pointNumber!, tableRules.oddsMultiple)
-      if (amount > maxOdds) {
-        return { valid: false, reason: `Maximum odds for this Come point is ${maxOdds} cents` }
-      }
-    }
-
-    if (type === 'dontComeOdds') {
-      const parentDontCome = activeBets.find(
-        b => b.owner === owner && b.type === 'dontCome' && b.pointNumber !== null && b.status !== 'resolved'
-      )
-      if (!parentDontCome) {
-        return { valid: false, reason: 'Must have an established Don\'t Come bet to place Don\'t Come Odds' }
-      }
-      // Lay odds max: sized so the PAYOUT doesn't exceed the come odds max
-      const maxComeOdds = getMaxOdds(parentDontCome.amount, parentDontCome.pointNumber!, tableRules.oddsMultiple)
-      const dontOddsRatio = crapsConfig.payouts.dontOdds[parentDontCome.pointNumber!]
-      const maxLay = dontOddsRatio
-        ? Math.floor(maxComeOdds * dontOddsRatio[1] / dontOddsRatio[0])
-        : maxComeOdds
-      if (amount > maxLay) {
-        return { valid: false, reason: `Maximum Don't Come Odds for this point is ${maxLay} cents` }
+    // Odds bets ride behind a flat bet and are capped cumulatively
+    if (isOddsType(type)) {
+      const target = resolveOddsTarget(type, amount, owner, activeBets, point, tableRules.oddsMultiple, targetPoint)
+      if (!target.ok) {
+        return { valid: false, reason: target.reason }
       }
     }
 
@@ -159,10 +90,20 @@ export function useBetManager() {
     // Min/max sizing (skip for odds bets - they have their own limits)
     if (!isOddsBet(type)) {
       if (amount < tableRules.minBet) {
-        return { valid: false, reason: `Minimum bet is ${tableRules.minBet} cents` }
+        return { valid: false, reason: `Minimum bet is ${formatCents(tableRules.minBet)}` }
       }
-      if (amount > tableRules.maxBet) {
-        return { valid: false, reason: `Maximum bet is ${tableRules.maxBet} cents` }
+      // The table maximum caps the total riding on a bet, not each chip:
+      // stacking several max-size chips on one spot is the same bet.
+      const alreadyOn = activeBets
+        .filter(b => b.owner === owner && b.type === type && b.status !== 'resolved')
+        .reduce((sum, b) => sum + b.amount, 0)
+      if (alreadyOn + amount > tableRules.maxBet) {
+        return {
+          valid: false,
+          reason: alreadyOn > 0
+            ? `Table maximum is ${formatCents(tableRules.maxBet)} — you already have ${formatCents(alreadyOn)} on this bet`
+            : `Maximum bet is ${formatCents(tableRules.maxBet)}`
+        }
       }
     }
 
@@ -178,10 +119,7 @@ export function useBetManager() {
     }
 
     // Bankroll check
-    let totalCost = amount
-    if (isBuyBet(type) && tableRules.buyVigTiming === 'on_bet') {
-      totalCost += calculateVig(amount)
-    }
+    const totalCost = amount + getUpfrontVig(type, amount, tableRules)
     if (player.bankroll < totalCost) {
       return { valid: false, reason: 'Insufficient bankroll' }
     }
@@ -217,7 +155,10 @@ export function useBetManager() {
       dontBetRemovedThisCycle: store.dontBetRemovedThisCycle
     }
 
-    const validation = validateBet(type, amount, owner, gameState)
+    // No more bets once the dice are out — the roll is already decided.
+    if (store.diceInAir) return null
+
+    const validation = validateBet(type, amount, owner, gameState, pointNumber)
     if (!validation.valid) {
       console.warn(`Bet validation failed: ${validation.reason}`)
       return null
@@ -225,17 +166,13 @@ export function useBetManager() {
 
     // Determine pointNumber for the bet
     let betPoint: number | null = pointNumber ?? null
-    if (type === 'passOdds' || type === 'dontPassOdds') {
-      betPoint = store.point
-    }
-    if (type === 'comeOdds' || type === 'dontComeOdds') {
-      const parentType = type === 'comeOdds' ? 'come' : 'dontCome'
-      const parent = store.activeBets.find(
-        b => b.owner === owner && b.type === parentType && b.pointNumber !== null && b.status !== 'resolved'
+    if (isOddsType(type)) {
+      // Same decision validateBet just made: which point these odds ride on.
+      const target = resolveOddsTarget(
+        type, amount, owner, store.activeBets, store.point, store.tableRules.oddsMultiple, pointNumber
       )
-      if (parent) {
-        betPoint = parent.pointNumber
-      }
+      if (!target.ok) return null
+      betPoint = target.point
     }
     // Place/Buy/Lay bets: extract number from type
     if ((isPlaceBet(type) || isBuyBet(type) || isLayBet(type)) && betPoint === null) {
@@ -282,16 +219,8 @@ export function useBetManager() {
       resolvedOnRoll: null
     }
 
-    // For buy bets with vig on bet, deduct vig from bankroll separately
-    if (isBuyBet(type) && store.tableRules.buyVigTiming === 'on_bet') {
-      const vig = calculateVig(amount)
-      const player = store.players.find(p => p.id === owner)
-      if (player) {
-        player.bankroll -= vig
-      }
-    }
-
-    store.addBet(bet)
+    // Buy bets on a vig-on-bet table pay their 5% on top of the wager
+    store.addBet(bet, getUpfrontVig(type, amount, store.tableRules))
     return bet
   }
 
@@ -300,6 +229,7 @@ export function useBetManager() {
    * Refunds vig for buy bets if vig was on_bet.
    */
   function removeBet(betId: string): boolean {
+    if (store.diceInAir) return false
     const bet = store.activeBets.find(b => b.id === betId)
     if (!bet) return false
 
@@ -309,13 +239,14 @@ export function useBetManager() {
       return false
     }
 
-    // Calculate vig refund for buy bets taken down before resolution
-    let vigRefund = 0
-    if (isBuyBet(bet.type) && store.tableRules.buyVigTiming === 'on_bet') {
-      vigRefund = calculateVig(bet.amount)
-    }
+    // Vig paid up front comes back with a bet taken down before it resolves
+    store.removeBet(betId, getUpfrontVig(bet.type, bet.amount, store.tableRules))
 
-    store.removeBet(betId, vigRefund)
+    // Odds cannot stand alone: taking down a Don't Pass / Don't Come bet
+    // brings its odds down with it.
+    for (const orphan of findOrphanedOdds(store.activeBets)) {
+      store.removeBet(orphan.id)
+    }
     return true
   }
 
@@ -323,6 +254,7 @@ export function useBetManager() {
    * Toggle the isWorking flag on a bet.
    */
   function toggleBetWorking(betId: string): boolean {
+    if (store.diceInAir) return false
     const bet = store.activeBets.find(b => b.id === betId)
     if (!bet) return false
 

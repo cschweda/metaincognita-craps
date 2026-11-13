@@ -74,6 +74,7 @@ describe('craps store', () => {
     const store = initStore()
     store.addBet(makeBet())
     store.setPoint(6)
+    store.setPhase('POINT_PHASE')
     store.saveToLocalStorage()
 
     setActivePinia(createPinia())

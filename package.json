@@ -13,8 +13,8 @@
     "test": "vitest run",
     "test:watch": "vitest --watch",
     "test:coverage": "vitest run --coverage",
-    "test:unit": "vitest --project unit",
-    "test:nuxt": "vitest --project nuxt",
+    "test:unit": "vitest run --project unit",
+    "test:nuxt": "vitest run --project nuxt",
     "clean": "rm -rf node_modules/.vite .nuxt"
   },
   "dependencies": {
@@ -22,7 +22,7 @@
     "@iconify-json/simple-icons": "^1.2.75",
     "@nuxt/ui": "^4.6.0",
     "@pinia/nuxt": "^0.11.3",
-    "nuxt": "^4.4.2",
+    "nuxt": "^4.6.4",
     "pinia": "^3.0.4",
     "tailwindcss": "^4.2.2"
   },

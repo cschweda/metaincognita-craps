@@ -9,6 +9,26 @@ All notable changes to this project will be documented in this file.
 - **The hub exit — a way back to the floor.** A gold **METAINCOGNITA** wordmark now sits at the far left of the top status bar on every route, linking to [metaincognita.com](https://metaincognita.com) — the floor where all nine Metaincognita games live. Until now the hub linked out to every game and not one of them linked home; a player deep in a session had no way back but the browser's back button. It is a real `<a href>`, opens in the **same tab** (an exit, not a side trip), is never hidden or gated, and **never confirms** — it destroys nothing, and the point is that you can always leave. Suite chrome, per METAINCOGNITA-GUIDELINES v1.2 §5.
 
 ### Bug Fixes
+- **Odds limit could be bypassed one chip at a time**: The odds maximum was checked per chip, not per bet, so repeated clicks stacked unlimited zero-edge odds behind a line bet. The limit is now cumulative. The table maximum is likewise applied to the total riding on a bet rather than to each chip.
+- **Buy bet vig was charged on the winnings, not the wager**: With vig-on-win, a winning Buy paid 5% of what it *won* (double the vig on the 4/10). It now pays 5% of the wager per MBS 3.4.10, matching vig-on-bet tables and the 1.67% house edge the advisor quotes.
+- **Lay bets were free on vig-on-bet tables**: Choosing "charged on every buy" switched Lay vig off entirely, leaving a zero-edge bet. Lay vig (5% of the win, MBS 3.4.11) is now always collected.
+- **No more bets while the dice are in the air**: The roll was decided before the dice animation began, and bets could still be placed or taken down during it. Betting now closes the moment the dice are thrown.
+- **Table could soft-lock in the point phase**: Taking down a Don't Pass after the point left the Roll button permanently disabled ("place a line bet first") with no way to place one. A line bet is now required only of the shooter, on the come-out roll (MBS 3.7).
+- **Come odds went to the wrong come point**: With several come points working, odds always attached to the first. They now go behind the first come point with room, and each come point's odds are settled with their own flat bet — a Come 6 resolving no longer sweeps the odds off the Come 8.
+- **Orphaned odds**: Taking down a Don't Pass / Don't Come now brings its odds down too, instead of leaving them to resolve alone.
+- **Losses displayed without their sign**: Negative amounts rendered as `$-10` (and `formatSignedCents` dropped the minus entirely). Now `-$10`.
+- **Session stats**: Bets taken down without action no longer count as "wagered"; up-front Buy vig now shows in Net P&L (so P&L always equals the change in bankroll); a player with chips still on the felt is no longer flagged busted.
+- **Analysis page**: Roll-distribution percentages were divided by the lifetime roll count but counted from the capped history window, so every bar shrank in long sessions. Bars can no longer overflow their track.
+- **Same Bet** now restores Hop and Horn High bets with their chosen number.
+- **Advisor**: "The point is now N" appears whenever a point is set (it was hidden unless set on the shooter's first roll).
+
+### Added
+- **Out-of-chips notice**: When the bankroll falls below the table minimum with nothing on the felt, the table says so and offers New Game instead of silently disabling everything.
+
+### Security
+- **Saved sessions are validated before use**: State read back from `localStorage` is now treated as untrusted input — every field is type- and range-checked and the session rebuilt from known fields only; anything malformed, hand-edited, or from an incompatible build is discarded rather than half-loaded. The "can't re-place a removed Don't bet" rule (MBS 3.16.1) now also survives a reload.
+
+### Earlier Bug Fixes
 - **Contract bet takedown**: Pass Line / Come bets could previously be removed via Take-Down mode even after a point was established. Now locked once a point is on, per MBS 3.7.
 - **Working toggle honored in point phase**: Toggling a bet OFF previously had no effect once the point phase started (the toggle was inert). Bet working status is now correctly honored during point phase.
 - **Seven-out returns OFF bets**: OFF Place/Buy/Hardways bets were being swept as losses on seven-out. They are now correctly returned to the player instead.

@@ -419,9 +419,10 @@ describe('resolveRoll – Buy bets', () => {
     const res = resolveRoll(roll, [bet], 'POINT_PHASE', defaultTableRules, 8)
     const r = findResolution(res, bet.id)!
     expect(r.outcome).toBe('win')
-    // Buy 4 true odds 2:1. Winnings = applyRatio(1000,[2,1]) = 2000. Vig on win = floor(2000*0.05) = 100
-    // Payout = 1000 + 2000 - 100 = 2900
-    expect(r.payout).toBe(2900)
+    // Buy 4 true odds 2:1. Winnings = applyRatio(1000,[2,1]) = 2000.
+    // Vig on win = 5% of the WAGER = floor(1000*0.05) = 50
+    // Payout = 1000 + 2000 - 50 = 2950
+    expect(r.payout).toBe(2950)
   })
 
   it('loses on seven-out', () => {
@@ -453,7 +454,7 @@ describe('resolveRoll – Buy bets', () => {
     const res = resolveRoll(roll, [bet], 'COME_OUT', defaultTableRules, null)
     const r = findResolution(res, bet.id)!
     expect(r.outcome).toBe('win')
-    expect(r.payout).toBe(2900)
+    expect(r.payout).toBe(2950)
   })
 })
 
@@ -473,15 +474,16 @@ describe('resolveRoll – Lay bets', () => {
     expect(r.payout).toBe(1475)
   })
 
-  it('wins on 7 (vig on bet — no vig deducted from payout)', () => {
+  it('wins on 7 — still pays vig on a vig-on-bet table (that rule is Buy-only)', () => {
     const rules: TableRules = { ...defaultTableRules, buyVigTiming: 'on_bet' }
     const bet = makeBet({ type: 'lay4', pointNumber: 4 })
     const roll = makeRoll(3, 4) // total 7
     const res = resolveRoll(roll, [bet], 'POINT_PHASE', rules, 8)
     const r = findResolution(res, bet.id)!
     expect(r.outcome).toBe('win')
-    // Winnings = 500, no vig deducted. Payout = 1000 + 500 = 1500
-    expect(r.payout).toBe(1500)
+    // Nothing charges a Lay at placement, so the 5% of the win is always
+    // collected here. Winnings = 500, vig = 25. Payout = 1000 + 500 - 25 = 1475
+    expect(r.payout).toBe(1475)
   })
 
   it('loses when its number is hit', () => {
