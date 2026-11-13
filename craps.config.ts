@@ -91,14 +91,14 @@ export const crapsConfig = {
   } as Record<string, Record<number, number>>,
 
   botStrategies: [
-    { name: 'Conservative Carl', system: 'pass_max_odds' },
-    { name: 'Don\'t Debbie', system: 'dont_pass_lay' },
-    { name: 'Iron Cross Irene', system: 'iron_cross' },
-    { name: 'Martingale Mike', system: 'martingale' },
-    { name: 'Regression Rick', system: 'regression' },
-    { name: 'Press Patricia', system: 'press' },
-    { name: 'Prop Bet Pete', system: 'props_only' },
-    { name: 'Three-Point Molly', system: 'three_point' }
+    { name: 'Conservative Carl', system: 'pass_max_odds', label: 'Pass + max odds' },
+    { name: 'Don\'t Debbie', system: 'dont_pass_lay', label: 'Don\'t Pass + lay odds' },
+    { name: 'Iron Cross Irene', system: 'iron_cross', label: 'Place 5, 6, 8 + Field' },
+    { name: 'Martingale Mike', system: 'martingale', label: 'Pass, double after a loss' },
+    { name: 'Regression Rick', system: 'regression', label: 'Place 6 + 8, regress after a hit' },
+    { name: 'Press Patricia', system: 'press', label: 'Place 6 + 8, press every win' },
+    { name: 'Prop Bet Pete', system: 'props_only', label: 'Hardways + Horn + Any Craps' },
+    { name: 'Three-Point Molly', system: 'three_point', label: 'Pass + 2 Come, max odds' }
   ],
 
   animation: {

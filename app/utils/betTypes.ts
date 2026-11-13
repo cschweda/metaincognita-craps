@@ -78,6 +78,8 @@ export interface PlayerState {
   isHero: boolean
   isBusted: boolean
   strategy: string | null
+  /** Consecutive line-bet losses; only the Martingale bot reads it. */
+  lossStreak: number
   bankrollHistory: number[]
 }
 

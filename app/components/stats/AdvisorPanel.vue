@@ -1,9 +1,12 @@
 <script setup lang="ts">
 import type { BetType } from '~/utils/betTypes'
 import { formatCents, formatPercent } from '~/utils/format'
+import { canToggleWorking } from '~/engine/betting'
+import { crapsConfig } from '~~/craps.config'
 
 const store = useCrapsStore()
 const { getRecommendations, getSessionInsights } = useAdvisor()
+const { toggleBetWorking } = useBetManager()
 
 const emit = defineEmits<{
   'advisor-bet': [betType: BetType]
@@ -12,7 +15,52 @@ const emit = defineEmits<{
 const recommendations = computed(() => getRecommendations())
 const insights = computed(() => getSessionInsights())
 
-const activeTab = ref<'advisor' | 'session' | 'bets'>('advisor')
+const activeTab = ref<'advisor' | 'session' | 'bets' | 'players'>('advisor')
+
+const tabs = computed(() => {
+  const list: Array<{ key: 'advisor' | 'session' | 'bets' | 'players', label: string }> = [
+    { key: 'advisor', label: 'Advisor' },
+    { key: 'session', label: 'Session' },
+    { key: 'bets', label: 'Bets' }
+  ]
+  // Nobody else at the table, nothing to compare against.
+  if (store.players.length > 1) list.push({ key: 'players', label: 'Players' })
+  return list
+})
+
+const heroActiveBets = computed(() =>
+  store.activeBets.filter(b => b.owner === 'hero' && b.status !== 'resolved')
+)
+
+// ── Players tab: every seat, its system, and how the system is doing ──
+const SYSTEM_LABELS: Record<string, string> = Object.fromEntries(
+  crapsConfig.botStrategies.map(s => [s.system, s.label])
+)
+
+/** Bankroll trend as SVG polyline points in a 100×24 box. */
+function sparkline(history: number[]): string {
+  const data = history.slice(-100)
+  if (data.length < 2) return ''
+  const lo = Math.min(...data)
+  const hi = Math.max(...data)
+  const span = hi - lo || 1
+  return data
+    .map((v, i) => `${((i / (data.length - 1)) * 100).toFixed(1)},${(22 - ((v - lo) / span) * 20).toFixed(1)}`)
+    .join(' ')
+}
+
+const seats = computed(() => store.players.map((player, seat) => {
+  const bets = store.activeBets.filter(b => b.owner === player.id && b.status !== 'resolved')
+  return {
+    player,
+    isShooter: seat === store.shooterSeat,
+    system: player.isHero ? 'You' : (SYSTEM_LABELS[player.strategy ?? ''] ?? 'Watching'),
+    onTable: bets.reduce((sum, b) => sum + b.amount, 0),
+    betCount: bets.length,
+    net: player.bankroll - player.startingBankroll,
+    trend: sparkline(player.bankrollHistory)
+  }
+}))
 
 // Per-bet-type stats for the bets tab
 const betStatsEntries = computed(() => {
@@ -79,8 +127,8 @@ function betTypeLabel(type: string): string {
     lay4: 'Lay 4', lay5: 'Lay 5', lay6: 'Lay 6', lay8: 'Lay 8', lay9: 'Lay 9', lay10: 'Lay 10',
     field: 'Field', hard4: 'Hard 4', hard6: 'Hard 6', hard8: 'Hard 8', hard10: 'Hard 10',
     any7: 'Any 7', anyCraps: 'Any Craps', aces: 'Aces', boxcars: 'Boxcars',
-    aceDeuce: 'Ace-Deuce', yo: 'Yo', crapsEleven: 'C&E', horn: 'Horn',
-    big6: 'Big 6', big8: 'Big 8'
+    aceDeuce: 'Ace-Deuce', yo: 'Yo', crapsEleven: 'C&E', horn: 'Horn', hornHigh: 'Horn High',
+    hopEasy: 'Hop Easy', hopHard: 'Hop Hard', big6: 'Big 6', big8: 'Big 8'
   }
   return labels[type] ?? type
 }
@@ -91,17 +139,13 @@ function betTypeLabel(type: string): string {
     <!-- Tab headers -->
     <div class="flex border-b border-neutral-700">
       <button
-        v-for="tab in [
-          { key: 'advisor', label: 'Advisor' },
-          { key: 'session', label: 'Session' },
-          { key: 'bets', label: 'Bets' }
-        ]"
+        v-for="tab in tabs"
         :key="tab.key"
         class="flex-1 py-2 px-2 text-xs font-medium transition-colors"
         :class="activeTab === tab.key
           ? 'text-emerald-400 border-b-2 border-emerald-400 bg-neutral-800/50'
           : 'text-neutral-500 hover:text-neutral-300'"
-        @click="activeTab = tab.key as typeof activeTab"
+        @click="activeTab = tab.key"
       >
         {{ tab.label }}
       </button>
@@ -390,13 +434,13 @@ function betTypeLabel(type: string): string {
         class="p-3 space-y-3"
       >
         <!-- Active bets -->
-        <div v-if="store.activeBets.filter(b => b.owner === 'hero' && b.status !== 'resolved').length > 0">
+        <div v-if="heroActiveBets.length > 0">
           <h4 class="text-neutral-400 text-xs font-medium mb-2">
             Your Active Bets
           </h4>
           <div class="space-y-1">
             <div
-              v-for="bet in store.activeBets.filter(b => b.owner === 'hero' && b.status !== 'resolved')"
+              v-for="bet in heroActiveBets"
               :key="bet.id"
               class="flex items-center justify-between bg-neutral-800/60 rounded px-2 py-1.5"
             >
@@ -406,14 +450,33 @@ function betTypeLabel(type: string): string {
                   v-if="bet.pointNumber"
                   class="text-neutral-500 text-xs"
                 >({{ bet.pointNumber }})</span>
-                <span
-                  v-if="!bet.isWorking"
-                  class="text-[9px] bg-neutral-700 text-neutral-400 px-1 rounded"
-                >OFF</span>
               </div>
-              <span class="text-neutral-100 font-mono text-xs">{{ formatCents(bet.amount) }}</span>
+              <div class="flex items-center gap-2">
+                <!-- Call a bet OFF (no action on the next roll) or back ON -->
+                <button
+                  v-if="canToggleWorking(bet.type)"
+                  type="button"
+                  class="text-[10px] font-bold px-1.5 py-0.5 rounded border transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-400 disabled:opacity-50 disabled:cursor-not-allowed"
+                  :class="bet.isWorking
+                    ? 'border-emerald-500/50 text-emerald-400 hover:bg-emerald-500/10'
+                    : 'border-amber-500/50 text-amber-400 hover:bg-amber-500/10'"
+                  :aria-pressed="bet.isWorking"
+                  :aria-label="`${betTypeLabel(bet.type)}${bet.pointNumber ? ' ' + bet.pointNumber : ''} is ${bet.isWorking ? 'on' : 'off'} — switch ${bet.isWorking ? 'off' : 'on'}`"
+                  :title="bet.isWorking
+                    ? 'Working: this bet wins or loses on the next roll. Click to call it OFF.'
+                    : 'Off: this bet has no action on the next roll. Click to turn it back ON.'"
+                  :disabled="store.diceInAir"
+                  @click="toggleBetWorking(bet.id)"
+                >
+                  {{ bet.isWorking ? 'ON' : 'OFF' }}
+                </button>
+                <span class="text-neutral-100 font-mono text-xs">{{ formatCents(bet.amount) }}</span>
+              </div>
             </div>
           </div>
+          <p class="text-neutral-600 text-[10px] mt-1.5 leading-snug">
+            Place, Buy, Hardway and odds bets can be called OFF. They switch off by themselves on a come-out roll.
+          </p>
         </div>
         <div
           v-else
@@ -481,6 +544,70 @@ function betTypeLabel(type: string): string {
                 class="font-mono"
               >Push</span>
             </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- PLAYERS TAB -->
+      <div
+        v-if="activeTab === 'players'"
+        class="p-3 space-y-2"
+      >
+        <p class="text-neutral-500 text-[11px] leading-snug">
+          Every other player sticks to one betting system, mechanically. Watch the bankrolls: a system changes how bumpy the ride is, never the house edge.
+        </p>
+        <div
+          v-for="seat in seats"
+          :key="seat.player.id"
+          class="rounded-lg border px-2.5 py-2"
+          :class="[
+            seat.player.isHero ? 'border-amber-500/40 bg-amber-500/5' : 'border-neutral-700 bg-neutral-800/50',
+            seat.player.isBusted ? 'opacity-60' : ''
+          ]"
+        >
+          <div class="flex items-center justify-between gap-2">
+            <span class="text-neutral-100 text-xs font-semibold truncate">{{ seat.player.name }}</span>
+            <span class="flex items-center gap-1 shrink-0">
+              <span
+                v-if="seat.isShooter"
+                class="text-[9px] font-bold px-1 rounded bg-emerald-600/30 text-emerald-300"
+              >SHOOTER</span>
+              <span
+                v-if="seat.player.isBusted"
+                class="text-[9px] font-bold px-1 rounded bg-red-600/30 text-red-300"
+              >BUSTED</span>
+            </span>
+          </div>
+          <p class="text-neutral-500 text-[10px]">
+            {{ seat.system }}
+          </p>
+          <div class="flex items-end justify-between gap-2 mt-1">
+            <div>
+              <span class="text-neutral-200 font-mono text-xs">{{ formatCents(seat.player.bankroll) }}</span>
+              <span
+                class="font-mono text-[11px] ml-1"
+                :class="seat.net >= 0 ? 'text-emerald-400' : 'text-red-400'"
+              >({{ seat.net >= 0 ? '+' : '' }}{{ formatCents(seat.net) }})</span>
+              <p class="text-neutral-500 text-[10px]">
+                {{ seat.betCount > 0 ? `${formatCents(seat.onTable)} on the table in ${seat.betCount} bet${seat.betCount === 1 ? '' : 's'}` : 'No bets on the table' }}
+              </p>
+            </div>
+            <svg
+              v-if="seat.trend"
+              viewBox="0 0 100 24"
+              class="w-20 h-6 shrink-0"
+              preserveAspectRatio="none"
+              role="img"
+              :aria-label="`${seat.player.name} bankroll trend`"
+            >
+              <polyline
+                :points="seat.trend"
+                fill="none"
+                :stroke="seat.net >= 0 ? '#34d399' : '#f87171'"
+                stroke-width="1.5"
+                vector-effect="non-scaling-stroke"
+              />
+            </svg>
           </div>
         </div>
       </div>
