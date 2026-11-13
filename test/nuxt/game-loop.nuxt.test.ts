@@ -184,6 +184,33 @@ describe('executeRoll (store integration)', () => {
   })
 })
 
+describe('centre bets and the table minimum', () => {
+  beforeEach(() => {
+    freshGame()
+  })
+
+  it('a $1 hardway is accepted at a $10 table; a $1 place bet is not', () => {
+    const { placeBet } = useBetManager()
+    expect(placeBet('hard8', 100, 'hero')).not.toBeNull()
+    expect(placeBet('any7', 500, 'hero')).not.toBeNull()
+    expect(placeBet('place6', 100, 'hero')).toBeNull()
+    expect(placeBet('field', 500, 'hero')).toBeNull()
+    expect(placeBet('hard6', 50, 'hero')).toBeNull()
+  })
+
+  it('a horn still has to split evenly, and a $12 horn pays on $3 a number', () => {
+    const store = useCrapsStore()
+    const { placeBet } = useBetManager()
+    const { executeRoll } = useGameLoop()
+    expect(placeBet('horn', 1000, 'hero')).toBeNull() // $10 does not split four ways
+    expect(placeBet('horn', 1200, 'hero')).not.toBeNull()
+    placeBet('pass', 1000, 'hero')
+    const before = store.hero!.bankroll
+    executeRoll(6, 5) // yo: $3 at 15:1 = $45 plus the $3 back; pass wins $10 + $10 back
+    expect(store.hero!.bankroll).toBe(before + 4800 + 2000)
+  })
+})
+
 describe('bots at the table', () => {
   const systems = crapsConfig.botStrategies.map(s => ({ name: s.name, strategy: s.system }))
 

@@ -3,7 +3,7 @@ import type { BetType } from '~/utils/betTypes'
 import { BET_TYPE_TO_ZONE } from '~/utils/betTypes'
 import { crapsConfig } from '~~/craps.config'
 import { rollDice } from '~/engine/rng'
-import { canRemoveBet } from '~/engine/betting'
+import { canRemoveBet, fitBetAmount } from '~/engine/betting'
 import { TUTORIAL_STEPS } from '~/utils/tutorial'
 
 const store = useCrapsStore()
@@ -184,21 +184,25 @@ function heroBetOnZone(zoneId: string) {
 // ── Disabled zones ──
 const EMPTY_SET = new Set<string>()
 
-const disabledZones = computed(() => {
-  const disabled = new Set<string>()
+/** Why each unavailable zone is unavailable (shown by Study mode). */
+const disabledReasons = computed(() => {
+  const reasons = new Map<string, string>()
   // The tutorial gates clicks itself (see handleZoneClick) so the table is
   // not greyed out while the player is meant to be watching it.
-  if (tutorialStep.value) return disabled
+  if (tutorialStep.value) return reasons
   for (const zoneId of Object.keys(ZONE_TO_BET_TYPE)) {
-    const validation = validateBet(betTypeForZone(zoneId)!, store.selectedChipValue, 'hero', {
+    const betType = betTypeForZone(zoneId)!
+    const validation = validateBet(betType, fitBetAmount(betType, store.selectedChipValue), 'hero', {
       phase: store.phase, point: store.point, activeBets: store.activeBets,
       tableRules: store.tableRules, rollNumber: store.rollNumber,
       dontBetRemovedThisCycle: store.dontBetRemovedThisCycle
     })
-    if (!validation.valid) disabled.add(zoneId)
+    if (!validation.valid) reasons.set(zoneId, validation.reason || 'Not available right now')
   }
-  return disabled
+  return reasons
 })
+
+const disabledZones = computed(() => new Set(disabledReasons.value.keys()))
 
 // ── Hop bet target picker ──
 const hopPicker = ref<{ open: boolean, type: 'hopEasy' | 'hopHard' }>({ open: false, type: 'hopHard' })
@@ -207,7 +211,7 @@ const hopTargets = computed(() =>
 )
 function placeHopBet(target: number) {
   hopPicker.value.open = false
-  placeBet(hopPicker.value.type, store.selectedChipValue, 'hero', target)
+  placeBet(hopPicker.value.type, fitBetAmount(hopPicker.value.type, store.selectedChipValue), 'hero', target)
 }
 
 // ── Zone click: place or remove ──
@@ -240,10 +244,10 @@ function handleZoneClick(zoneId: string) {
   }
   // Tutorial bets are always the table minimum, so its numbers hold whatever
   // chip happens to be selected.
-  const amount = tutorialStep.value ? store.tableRules.minBet : store.selectedChipValue
+  const amount = tutorialStep.value ? store.tableRules.minBet : fitBetAmount(betType, store.selectedChipValue)
   const placed = placeBet(betType, amount, 'hero')
   if (!placed) {
-    const validation = validateBet(betType, store.selectedChipValue, 'hero', {
+    const validation = validateBet(betType, amount, 'hero', {
       phase: store.phase, point: store.point, activeBets: store.activeBets,
       tableRules: store.tableRules, rollNumber: store.rollNumber,
       dontBetRemovedThisCycle: store.dontBetRemovedThisCycle
@@ -433,7 +437,7 @@ function handleAdvisorBet(betType: BetType) {
   }
 
   // For all other bets, place at the currently selected chip value
-  placeBet(betType, store.selectedChipValue, 'hero')
+  placeBet(betType, fitBetAmount(betType, store.selectedChipValue), 'hero')
 }
 </script>
 
@@ -584,6 +588,7 @@ function handleAdvisorBet(betType: BetType) {
             <TableCrapsTable
               :active-bets="store.heroBets"
               :disabled-zones="takeDownMode ? EMPTY_SET : disabledZones"
+              :disabled-reasons="disabledReasons"
               :highlight-zone="tutorialZone"
               :puck-state="store.puckState"
               :puck-point="store.point"

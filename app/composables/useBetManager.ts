@@ -11,7 +11,9 @@ import {
 } from '~/utils/betTypes'
 import { formatCents } from '~/utils/format'
 import { getUpfrontVig } from '~/engine/payouts'
-import { canRemoveBet, canToggleWorking, findOrphanedOdds, getDefaultWorking, isOddsType, resolveOddsTarget } from '~/engine/betting'
+import {
+  canRemoveBet, canToggleWorking, findOrphanedOdds, getDefaultWorking, getMinimumBet, isOddsType, resolveOddsTarget
+} from '~/engine/betting'
 
 interface ValidationResult {
   valid: boolean
@@ -89,8 +91,9 @@ export function useBetManager() {
 
     // Min/max sizing (skip for odds bets - they have their own limits)
     if (!isOddsBet(type)) {
-      if (amount < tableRules.minBet) {
-        return { valid: false, reason: `Minimum bet is ${formatCents(tableRules.minBet)}` }
+      const minimum = getMinimumBet(type, tableRules)
+      if (amount < minimum) {
+        return { valid: false, reason: `Minimum for this bet is ${formatCents(minimum)}` }
       }
       // The table maximum caps the total riding on a bet, not each chip:
       // stacking several max-size chips on one spot is the same bet.
