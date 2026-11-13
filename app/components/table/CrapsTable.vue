@@ -10,6 +10,8 @@ interface Props {
   puckPoint?: number | null
   studyMode?: boolean
   gamePhase?: string
+  /** Why each disabled zone cannot be bet right now — shown by Study mode. */
+  disabledReasons?: Map<string, string>
   /** Zone the tutorial is pointing at; it glows until the player clicks it. */
   highlightZone?: string | null
 }
@@ -21,6 +23,7 @@ const props = withDefaults(defineProps<Props>(), {
   puckPoint: null,
   studyMode: false,
   gamePhase: 'SETUP',
+  disabledReasons: () => new Map<string, string>(),
   highlightZone: null
 })
 
@@ -1481,6 +1484,7 @@ const puckY = computed(() => {
       :y="studyTooltipPos.y"
       :has-bet-amount="zoneBetTotal(studyHoveredZone)"
       :disabled="isDisabled(studyHoveredZone)"
+      :reason="disabledReasons.get(studyHoveredZone) ?? ''"
       :game-phase="gamePhase"
     />
   </div>
@@ -1794,6 +1798,13 @@ const puckY = computed(() => {
 
 .study-mode .zone {
   cursor: help !important;
+}
+
+/* Disabled zones normally ignore the pointer. In Study mode nothing can be
+   bet anyway, and the bets you cannot make right now are exactly the ones
+   worth reading about — so they must still answer a hover. */
+.study-mode .zone.disabled {
+  pointer-events: auto;
 }
 
 .study-mode .zone:hover .zone-fill,

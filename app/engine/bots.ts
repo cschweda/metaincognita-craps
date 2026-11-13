@@ -1,5 +1,5 @@
 import type { ActiveBet, BetResolution, BetType, GamePhase, TableRules } from '../utils/betTypes'
-import { listOddsRoom } from './betting'
+import { getPropUnit, listOddsRoom } from './betting'
 
 /**
  * Bot co-bettors (Doc 04). Each bot plays one named, fully mechanical betting
@@ -140,14 +140,18 @@ export function botActionsBeforeRoll(bot: BotSeat, table: BotTable): BotAction[]
       }
       break
 
-    case 'props_only': // Prop Bet Pete: nothing but sucker bets
-      place('hard4', min)
-      place('hard6', min)
-      place('hard8', min)
-      place('hard10', min)
-      place('horn', unit(min, 400))
-      place('anyCraps', min)
+    case 'props_only': { // Prop Bet Pete: nothing but sucker bets
+      // One unit on each hardway, a four-unit horn and a unit on any craps —
+      // $9 a roll in $1 units at a $10 table (Doc 04).
+      const chip = getPropUnit(rules)
+      place('hard4', chip)
+      place('hard6', chip)
+      place('hard8', chip)
+      place('hard10', chip)
+      place('horn', chip * 4)
+      place('anyCraps', chip)
       break
+    }
   }
 
   // MBS 3.7: whoever holds the dice must have a line bet on the come-out,
