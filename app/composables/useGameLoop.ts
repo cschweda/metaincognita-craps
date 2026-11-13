@@ -78,9 +78,10 @@ export function useGameLoop() {
     )
 
     // 5. Apply resolutions to the store
-    if (actionableResolutions.length > 0) {
-      store.applyResolutions(actionableResolutions)
-    }
+    // Always, even when nothing resolved: this is also what clears the
+    // previous roll's results, so a no-action roll is not reported as a
+    // repeat of the last win or loss.
+    store.applyResolutions(actionableResolutions)
 
     // 6. Return odds whose flat bet just resolved out from under them
     // (e.g. Come Odds that were OFF on a come-out roll when the 7 took the

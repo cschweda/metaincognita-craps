@@ -11,7 +11,14 @@ const props = defineProps<{
   hasSameBet: boolean
   heroIsShooting: boolean
   numberBetMode: 'place' | 'buy' | 'lay'
+  /**
+   * Tutorial lock. `null`: normal play. Otherwise every shortcut is disabled
+   * except the one the current step asks for ('roll' or 'odds'; 'none' = all).
+   */
+  tutorialFocus?: 'roll' | 'odds' | 'none' | null
 }>()
+
+const locked = computed(() => props.tutorialFocus != null)
 
 const _emit = defineEmits<{
   'roll': []
@@ -107,7 +114,7 @@ const rollTooltip = computed(() => {
       :label="rollLabel"
       :title="rollTooltip"
       class="font-bold tracking-wide"
-      :class="props.canRoll ? 'cursor-pointer' : 'cursor-not-allowed'"
+      :class="[props.canRoll ? 'cursor-pointer' : 'cursor-not-allowed', { 'tutorial-pulse': props.tutorialFocus === 'roll' && props.canRoll }]"
       :ui="{ base: 'bg-emerald-600 hover:bg-emerald-500 disabled:bg-neutral-700 disabled:text-neutral-500 text-white shadow-lg shadow-emerald-600/30 px-6' }"
       @click="$emit('roll')"
     />
@@ -118,7 +125,7 @@ const rollTooltip = computed(() => {
         size="xs"
         variant="outline"
         label="Pass"
-        :disabled="!canPlacePass"
+        :disabled="!canPlacePass || locked"
         :class="canPlacePass ? 'cursor-pointer' : 'cursor-not-allowed'"
         :title="canPlacePass ? 'Place minimum on Pass Line (1.41% edge)' : 'Only during Come-Out phase'"
         color="neutral"
@@ -128,7 +135,7 @@ const rollTooltip = computed(() => {
         size="xs"
         variant="outline"
         label="Come"
-        :disabled="!canPlaceCome"
+        :disabled="!canPlaceCome || locked"
         :class="canPlaceCome ? 'cursor-pointer' : 'cursor-not-allowed'"
         :title="canPlaceCome ? 'Place minimum on Come (1.41% edge)' : 'Only during Point phase'"
         color="neutral"
@@ -138,7 +145,7 @@ const rollTooltip = computed(() => {
         size="xs"
         variant="outline"
         label="Pl 6"
-        :disabled="!canPlacePlace"
+        :disabled="!canPlacePlace || locked"
         :class="canPlacePlace ? 'cursor-pointer' : 'cursor-not-allowed'"
         title="Place 6 — pays 7:6 (1.52% edge)"
         color="neutral"
@@ -148,18 +155,19 @@ const rollTooltip = computed(() => {
         size="xs"
         variant="outline"
         label="Pl 8"
-        :disabled="!canPlacePlace"
+        :disabled="!canPlacePlace || locked"
         :class="canPlacePlace ? 'cursor-pointer' : 'cursor-not-allowed'"
         title="Place 8 — pays 7:6 (1.52% edge)"
         color="neutral"
         @click="quickBet('place8')"
       />
       <UButton
-        v-if="oddsOffer"
+        v-if="oddsOffer && (!locked || props.tutorialFocus === 'odds')"
         size="xs"
         variant="outline"
         :label="oddsOffer.label"
         class="cursor-pointer border-emerald-500/60 text-emerald-400 hover:bg-emerald-500/20"
+        :class="{ 'tutorial-pulse': props.tutorialFocus === 'odds' }"
         :title="`Put ${formatCents(oddsOffer.amount)} in odds behind your bet — 0% house edge`"
         color="neutral"
         @click="placeOdds"
@@ -182,6 +190,7 @@ const rollTooltip = computed(() => {
           : 'text-neutral-400 hover:text-neutral-200'"
         :aria-pressed="props.numberBetMode === mode.key"
         :title="mode.title"
+        :disabled="locked"
         @click="$emit('update:number-bet-mode', mode.key)"
       >
         {{ mode.label }}
@@ -193,7 +202,7 @@ const rollTooltip = computed(() => {
       size="xs"
       variant="outline"
       label="Same Bet"
-      :disabled="!props.hasSameBet"
+      :disabled="!props.hasSameBet || locked"
       :class="props.hasSameBet ? 'cursor-pointer' : 'cursor-not-allowed'"
       :title="props.hasSameBet ? 'Re-place your previous bet configuration' : 'Roll at least once first'"
       color="neutral"
@@ -205,6 +214,7 @@ const rollTooltip = computed(() => {
       size="xs"
       variant="outline"
       :label="props.takeDownMode ? 'Done' : 'Take Down'"
+      :disabled="locked"
       :class="props.takeDownMode ? 'border-red-500 text-red-400 bg-red-500/10' : 'cursor-pointer'"
       :title="props.takeDownMode
         ? 'Exit take-down mode'
@@ -214,3 +224,21 @@ const rollTooltip = computed(() => {
     />
   </div>
 </template>
+
+<style scoped>
+/* The control the tutorial is waiting on */
+.tutorial-pulse {
+  box-shadow: 0 0 0 3px rgba(251, 191, 36, 0.9);
+  animation: tutorial-ring 1.1s ease-in-out infinite;
+}
+
+@keyframes tutorial-ring {
+  50% { box-shadow: 0 0 0 3px rgba(251, 191, 36, 0.25); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tutorial-pulse {
+    animation: none;
+  }
+}
+</style>

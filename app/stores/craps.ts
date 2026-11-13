@@ -2,6 +2,7 @@ import { defineStore } from 'pinia'
 import type { GamePhase, DiceRoll, ActiveBet, BetResolution, TableRules, PlayerState, SessionStats } from '~/utils/betTypes'
 import { resetBetIdCounter, syncBetIdCounter } from '~/utils/betTypes'
 import { parseSession } from '~/utils/session'
+import { TUTORIAL_STEPS } from '~/utils/tutorial'
 import { staysUpAfterWin } from '~/engine/betting'
 import { getUpfrontVig } from '~/engine/payouts'
 import { crapsConfig } from '~~/craps.config'
@@ -64,7 +65,11 @@ export const useCrapsStore = defineStore('craps', {
     // True from the moment the dice leave the shooter's hand until the roll
     // is resolved. "No more bets": nothing may be placed or taken down in
     // that window, because the outcome is already decided. Never persisted.
-    diceInAir: false
+    diceInAir: false,
+
+    // Guided tutorial: index of the current step, or null when not running.
+    // Saved with the session, so a reload resumes the lesson where it was.
+    tutorialStep: null as number | null
   }),
 
   getters: {
@@ -151,6 +156,7 @@ export const useCrapsStore = defineStore('craps', {
       this.rollHistory = []
       this.dontBetRemovedThisCycle = new Set()
       this.diceInAir = false
+      this.tutorialStep = null
       this.sessionStats = {
         rollsWitnessed: 0,
         pointsEstablished: 0,
@@ -355,7 +361,8 @@ export const useCrapsStore = defineStore('craps', {
           players: this.players,
           sessionStats: this.sessionStats,
           selectedChipValue: this.selectedChipValue,
-          dontBetRemovedThisCycle: [...this.dontBetRemovedThisCycle]
+          dontBetRemovedThisCycle: [...this.dontBetRemovedThisCycle],
+          tutorialStep: this.tutorialStep
         }
         localStorage.setItem(crapsConfig.storage.localStorageKey, JSON.stringify(data))
       } catch {
@@ -389,6 +396,10 @@ export const useCrapsStore = defineStore('craps', {
         this.selectedChipValue = data.selectedChipValue
         this.dontBetRemovedThisCycle = new Set(data.dontBetRemovedThisCycle)
         this.diceInAir = false
+        // A step number from a build with a different script is meaningless.
+        this.tutorialStep = data.tutorialStep !== null && data.tutorialStep < TUTORIAL_STEPS.length
+          ? data.tutorialStep
+          : null
         return true
       } catch {
         try {
