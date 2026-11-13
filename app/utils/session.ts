@@ -21,6 +21,8 @@ export interface PersistedSession {
   sessionStats: SessionStats
   selectedChipValue: number
   dontBetRemovedThisCycle: string[]
+  /** Step of the guided tutorial in progress, or null. */
+  tutorialStep: number | null
 }
 
 type Rec = Record<string, unknown>
@@ -214,6 +216,7 @@ export function parseSession(data: unknown): PersistedSession | null {
     players,
     sessionStats,
     selectedChipValue: isCount(chip) && chip >= 1 ? chip : tableRules.minBet,
+    tutorialStep: isCount(data.tutorialStep) ? data.tutorialStep : null,
     dontBetRemovedThisCycle: removed.filter((key): key is string => {
       if (typeof key !== 'string') return false
       const match = key.match(/^(.+)-(dontPass|dontCome)$/)

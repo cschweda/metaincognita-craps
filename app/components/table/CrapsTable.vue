@@ -10,6 +10,8 @@ interface Props {
   puckPoint?: number | null
   studyMode?: boolean
   gamePhase?: string
+  /** Zone the tutorial is pointing at; it glows until the player clicks it. */
+  highlightZone?: string | null
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -18,8 +20,18 @@ const props = withDefaults(defineProps<Props>(), {
   puckState: 'OFF',
   puckPoint: null,
   studyMode: false,
-  gamePhase: 'SETUP'
+  gamePhase: 'SETUP',
+  highlightZone: null
 })
+
+/** State classes shared by every betting zone. */
+function zoneClass(zoneId: string) {
+  return {
+    'disabled': props.disabledZones.has(zoneId),
+    // The spot the tutorial is pointing at glows until it is clicked
+    'tutorial-target': props.highlightZone === zoneId
+  }
+}
 
 const emit = defineEmits<{
   'zone-click': [zoneId: string]
@@ -213,7 +225,7 @@ const puckY = computed(() => {
         <g
           id="place-4"
           class="zone"
-          :class="{ disabled: isDisabled('place-4') }"
+          :class="zoneClass('place-4')"
           role="button"
           :tabindex="isDisabled('place-4') ? -1 : 0"
           :aria-label="zoneAriaLabel('place-4')"
@@ -244,7 +256,7 @@ const puckY = computed(() => {
         <g
           id="place-5"
           class="zone"
-          :class="{ disabled: isDisabled('place-5') }"
+          :class="zoneClass('place-5')"
           role="button"
           :tabindex="isDisabled('place-5') ? -1 : 0"
           :aria-label="zoneAriaLabel('place-5')"
@@ -275,7 +287,7 @@ const puckY = computed(() => {
         <g
           id="place-six"
           class="zone"
-          :class="{ disabled: isDisabled('place-six') }"
+          :class="zoneClass('place-six')"
           role="button"
           :tabindex="isDisabled('place-six') ? -1 : 0"
           :aria-label="zoneAriaLabel('place-six')"
@@ -306,7 +318,7 @@ const puckY = computed(() => {
         <g
           id="place-8"
           class="zone"
-          :class="{ disabled: isDisabled('place-8') }"
+          :class="zoneClass('place-8')"
           role="button"
           :tabindex="isDisabled('place-8') ? -1 : 0"
           :aria-label="zoneAriaLabel('place-8')"
@@ -337,7 +349,7 @@ const puckY = computed(() => {
         <g
           id="place-nine"
           class="zone"
-          :class="{ disabled: isDisabled('place-nine') }"
+          :class="zoneClass('place-nine')"
           role="button"
           :tabindex="isDisabled('place-nine') ? -1 : 0"
           :aria-label="zoneAriaLabel('place-nine')"
@@ -368,7 +380,7 @@ const puckY = computed(() => {
         <g
           id="place-10"
           class="zone"
-          :class="{ disabled: isDisabled('place-10') }"
+          :class="zoneClass('place-10')"
           role="button"
           :tabindex="isDisabled('place-10') ? -1 : 0"
           :aria-label="zoneAriaLabel('place-10')"
@@ -401,7 +413,7 @@ const puckY = computed(() => {
         <g
           id="big-6"
           class="zone"
-          :class="{ disabled: isDisabled('big-6') }"
+          :class="zoneClass('big-6')"
           role="button"
           :tabindex="isDisabled('big-6') ? -1 : 0"
           :aria-label="zoneAriaLabel('big-6')"
@@ -425,7 +437,7 @@ const puckY = computed(() => {
         <g
           id="big-8"
           class="zone"
-          :class="{ disabled: isDisabled('big-8') }"
+          :class="zoneClass('big-8')"
           role="button"
           :tabindex="isDisabled('big-8') ? -1 : 0"
           :aria-label="zoneAriaLabel('big-8')"
@@ -452,7 +464,7 @@ const puckY = computed(() => {
       <g
         id="dont-come"
         class="zone"
-        :class="{ disabled: isDisabled('dont-come') }"
+        :class="zoneClass('dont-come')"
         role="button"
         :tabindex="isDisabled('dont-come') ? -1 : 0"
         :aria-label="zoneAriaLabel('dont-come')"
@@ -478,7 +490,7 @@ const puckY = computed(() => {
       <g
         id="come"
         class="zone"
-        :class="{ disabled: isDisabled('come') }"
+        :class="zoneClass('come')"
         role="button"
         :tabindex="isDisabled('come') ? -1 : 0"
         :aria-label="zoneAriaLabel('come')"
@@ -504,7 +516,7 @@ const puckY = computed(() => {
       <g
         id="field"
         class="zone"
-        :class="{ disabled: isDisabled('field') }"
+        :class="zoneClass('field')"
         role="button"
         :tabindex="isDisabled('field') ? -1 : 0"
         :aria-label="zoneAriaLabel('field')"
@@ -557,7 +569,7 @@ const puckY = computed(() => {
       <g
         id="dont-pass"
         class="zone"
-        :class="{ disabled: isDisabled('dont-pass') }"
+        :class="zoneClass('dont-pass')"
         role="button"
         :tabindex="isDisabled('dont-pass') ? -1 : 0"
         :aria-label="zoneAriaLabel('dont-pass')"
@@ -588,7 +600,7 @@ const puckY = computed(() => {
       <g
         id="pass-line"
         class="zone"
-        :class="{ disabled: isDisabled('pass-line') }"
+        :class="zoneClass('pass-line')"
         role="button"
         :tabindex="isDisabled('pass-line') ? -1 : 0"
         :aria-label="zoneAriaLabel('pass-line')"
@@ -613,7 +625,7 @@ const puckY = computed(() => {
       <g
         id="pass-odds"
         class="zone"
-        :class="{ 'disabled': isDisabled('pass-odds'), 'odds-available': !isDisabled('pass-odds') && zoneBetTotal('pass-odds') === 0 }"
+        :class="{ 'disabled': isDisabled('pass-odds'), 'tutorial-target': highlightZone === 'pass-odds', 'odds-available': !isDisabled('pass-odds') && zoneBetTotal('pass-odds') === 0 }"
         role="button"
         :tabindex="isDisabled('pass-odds') ? -1 : 0"
         :aria-label="zoneAriaLabel('pass-odds')"
@@ -640,7 +652,7 @@ const puckY = computed(() => {
       <g
         id="dont-pass-odds"
         class="zone"
-        :class="{ 'disabled': isDisabled('dont-pass-odds'), 'odds-available': !isDisabled('dont-pass-odds') && zoneBetTotal('dont-pass-odds') === 0 }"
+        :class="{ 'disabled': isDisabled('dont-pass-odds'), 'tutorial-target': highlightZone === 'dont-pass-odds', 'odds-available': !isDisabled('dont-pass-odds') && zoneBetTotal('dont-pass-odds') === 0 }"
         role="button"
         :tabindex="isDisabled('dont-pass-odds') ? -1 : 0"
         :aria-label="zoneAriaLabel('dont-pass-odds')"
@@ -667,7 +679,7 @@ const puckY = computed(() => {
       <g
         id="come-odds"
         class="zone"
-        :class="{ disabled: isDisabled('come-odds') }"
+        :class="zoneClass('come-odds')"
         tabindex="-1"
         @click="handleZoneClick('come-odds')"
       >
@@ -678,7 +690,7 @@ const puckY = computed(() => {
       <g
         id="dont-come-odds"
         class="zone"
-        :class="{ disabled: isDisabled('dont-come-odds') }"
+        :class="zoneClass('dont-come-odds')"
         tabindex="-1"
         @click="handleZoneClick('dont-come-odds')"
       />
@@ -715,7 +727,7 @@ const puckY = computed(() => {
           <g
             id="hard-4"
             class="zone"
-            :class="{ disabled: isDisabled('hard-4') }"
+            :class="zoneClass('hard-4')"
             role="button"
             :tabindex="isDisabled('hard-4') ? -1 : 0"
             :aria-label="zoneAriaLabel('hard-4')"
@@ -746,7 +758,7 @@ const puckY = computed(() => {
           <g
             id="hard-6"
             class="zone"
-            :class="{ disabled: isDisabled('hard-6') }"
+            :class="zoneClass('hard-6')"
             role="button"
             :tabindex="isDisabled('hard-6') ? -1 : 0"
             :aria-label="zoneAriaLabel('hard-6')"
@@ -777,7 +789,7 @@ const puckY = computed(() => {
           <g
             id="hard-8"
             class="zone"
-            :class="{ disabled: isDisabled('hard-8') }"
+            :class="zoneClass('hard-8')"
             role="button"
             :tabindex="isDisabled('hard-8') ? -1 : 0"
             :aria-label="zoneAriaLabel('hard-8')"
@@ -808,7 +820,7 @@ const puckY = computed(() => {
           <g
             id="hard-10"
             class="zone"
-            :class="{ disabled: isDisabled('hard-10') }"
+            :class="zoneClass('hard-10')"
             role="button"
             :tabindex="isDisabled('hard-10') ? -1 : 0"
             :aria-label="zoneAriaLabel('hard-10')"
@@ -840,7 +852,7 @@ const puckY = computed(() => {
         <g
           id="any-seven"
           class="zone"
-          :class="{ disabled: isDisabled('any-seven') }"
+          :class="zoneClass('any-seven')"
           role="button"
           :tabindex="isDisabled('any-seven') ? -1 : 0"
           :aria-label="zoneAriaLabel('any-seven')"
@@ -871,7 +883,7 @@ const puckY = computed(() => {
         <g
           id="any-craps"
           class="zone"
-          :class="{ disabled: isDisabled('any-craps') }"
+          :class="zoneClass('any-craps')"
           role="button"
           :tabindex="isDisabled('any-craps') ? -1 : 0"
           :aria-label="zoneAriaLabel('any-craps')"
@@ -907,7 +919,7 @@ const puckY = computed(() => {
           <g
             id="aces"
             class="zone"
-            :class="{ disabled: isDisabled('aces') }"
+            :class="zoneClass('aces')"
             role="button"
             :tabindex="isDisabled('aces') ? -1 : 0"
             :aria-label="zoneAriaLabel('aces')"
@@ -943,7 +955,7 @@ const puckY = computed(() => {
           <g
             id="ace-deuce"
             class="zone"
-            :class="{ disabled: isDisabled('ace-deuce') }"
+            :class="zoneClass('ace-deuce')"
             role="button"
             :tabindex="isDisabled('ace-deuce') ? -1 : 0"
             :aria-label="zoneAriaLabel('ace-deuce')"
@@ -979,7 +991,7 @@ const puckY = computed(() => {
           <g
             id="yo-eleven"
             class="zone"
-            :class="{ disabled: isDisabled('yo-eleven') }"
+            :class="zoneClass('yo-eleven')"
             role="button"
             :tabindex="isDisabled('yo-eleven') ? -1 : 0"
             :aria-label="zoneAriaLabel('yo-eleven')"
@@ -1015,7 +1027,7 @@ const puckY = computed(() => {
           <g
             id="boxcars"
             class="zone"
-            :class="{ disabled: isDisabled('boxcars') }"
+            :class="zoneClass('boxcars')"
             role="button"
             :tabindex="isDisabled('boxcars') ? -1 : 0"
             :aria-label="zoneAriaLabel('boxcars')"
@@ -1052,7 +1064,7 @@ const puckY = computed(() => {
         <g
           id="craps-eleven"
           class="zone"
-          :class="{ disabled: isDisabled('craps-eleven') }"
+          :class="zoneClass('craps-eleven')"
           role="button"
           :tabindex="isDisabled('craps-eleven') ? -1 : 0"
           :aria-label="zoneAriaLabel('craps-eleven')"
@@ -1083,7 +1095,7 @@ const puckY = computed(() => {
         <g
           id="horn"
           class="zone"
-          :class="{ disabled: isDisabled('horn') }"
+          :class="zoneClass('horn')"
           role="button"
           :tabindex="isDisabled('horn') ? -1 : 0"
           :aria-label="zoneAriaLabel('horn')"
@@ -1114,7 +1126,7 @@ const puckY = computed(() => {
         <g
           id="horn-high"
           class="zone"
-          :class="{ disabled: isDisabled('horn-high') }"
+          :class="zoneClass('horn-high')"
           role="button"
           :tabindex="isDisabled('horn-high') ? -1 : 0"
           :aria-label="zoneAriaLabel('horn-high')"
@@ -1145,7 +1157,7 @@ const puckY = computed(() => {
         <g
           id="hop-easy"
           class="zone"
-          :class="{ disabled: isDisabled('hop-easy') }"
+          :class="zoneClass('hop-easy')"
           role="button"
           :tabindex="isDisabled('hop-easy') ? -1 : 0"
           :aria-label="zoneAriaLabel('hop-easy')"
@@ -1175,7 +1187,7 @@ const puckY = computed(() => {
         <g
           id="hop-hard"
           class="zone"
-          :class="{ disabled: isDisabled('hop-hard') }"
+          :class="zoneClass('hop-hard')"
           role="button"
           :tabindex="isDisabled('hop-hard') ? -1 : 0"
           :aria-label="zoneAriaLabel('hop-hard')"
@@ -1504,6 +1516,29 @@ const puckY = computed(() => {
 @keyframes odds-pulse {
   0%, 100% { stroke-opacity: 0.3; }
   50% { stroke-opacity: 0.8; }
+}
+
+/* ===== Tutorial spotlight ===== */
+.zone.tutorial-target .zone-fill,
+.zone.tutorial-target .zone-fill-prop,
+.zone.tutorial-target .zone-fill-odds-area {
+  stroke: #fbbf24;
+  stroke-width: 5;
+  stroke-dasharray: none;
+  animation: tutorial-pulse 1.1s ease-in-out infinite;
+}
+
+@keyframes tutorial-pulse {
+  0%, 100% { stroke-opacity: 1; }
+  50% { stroke-opacity: 0.3; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .zone.tutorial-target .zone-fill,
+  .zone.tutorial-target .zone-fill-prop,
+  .zone.tutorial-target .zone-fill-odds-area {
+    animation: none;
+  }
 }
 
 /* ===== Cursor: pointer on enabled zones ===== */
