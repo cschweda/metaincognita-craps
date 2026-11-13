@@ -9,6 +9,7 @@ const store = useCrapsStore()
 const router = useRouter()
 const { placeBet, validateBet, removeBet } = useBetManager()
 const { executeRoll } = useGameLoop()
+const { betBeforeRoll, reactToRoll } = useBots()
 const toast = useToast()
 
 // ── Zone mapping ──
@@ -119,13 +120,42 @@ function placeSameBet() {
   }
 }
 
+// ── Number boxes: Place, Buy or Lay ──
+// A click on a number box makes whichever of the three the player has
+// selected. (Buy and Lay have no painted area of their own on the layout.)
+const numberBetMode = ref<'place' | 'buy' | 'lay'>('place')
+
+function betTypeForZone(zoneId: string): BetType | undefined {
+  const placeType = ZONE_TO_BET_TYPE[zoneId]
+  if (placeType?.startsWith('place') && numberBetMode.value !== 'place') {
+    return placeType.replace('place', numberBetMode.value) as BetType
+  }
+  return placeType
+}
+
+/** The hero's bet a take-down click on this zone refers to. */
+function heroBetOnZone(zoneId: string) {
+  const mine = store.activeBets.filter(b => b.owner === 'hero' && b.status !== 'resolved')
+  const placeType = ZONE_TO_BET_TYPE[zoneId]
+  if (!placeType?.startsWith('place')) {
+    return mine.find(b => BET_TYPE_TO_ZONE[b.type] === zoneId)
+  }
+  // On a number box: the selected kind first, then anything else riding there.
+  const kinds = [numberBetMode.value, 'place', 'buy', 'lay']
+  for (const kind of kinds) {
+    const bet = mine.find(b => b.type === placeType.replace('place', kind))
+    if (bet) return bet
+  }
+  return undefined
+}
+
 // ── Disabled zones ──
 const EMPTY_SET = new Set<string>()
 
 const disabledZones = computed(() => {
   const disabled = new Set<string>()
-  for (const [zoneId, betType] of Object.entries(ZONE_TO_BET_TYPE)) {
-    const validation = validateBet(betType, store.selectedChipValue, 'hero', {
+  for (const zoneId of Object.keys(ZONE_TO_BET_TYPE)) {
+    const validation = validateBet(betTypeForZone(zoneId)!, store.selectedChipValue, 'hero', {
       phase: store.phase, point: store.point, activeBets: store.activeBets,
       tableRules: store.tableRules, rollNumber: store.rollNumber,
       dontBetRemovedThisCycle: store.dontBetRemovedThisCycle
@@ -154,9 +184,7 @@ function handleZoneClick(zoneId: string) {
   }
   if (takeDownMode.value) {
     // Remove the hero's bet on this zone
-    const bet = store.activeBets.find(
-      b => b.owner === 'hero' && BET_TYPE_TO_ZONE[b.type] === zoneId && b.status !== 'resolved'
-    )
+    const bet = heroBetOnZone(zoneId)
     if (bet) {
       const removal = canRemoveBet(bet, store.point)
       if (!removal.allowed) {
@@ -167,7 +195,7 @@ function handleZoneClick(zoneId: string) {
     }
     return
   }
-  const betType = ZONE_TO_BET_TYPE[zoneId]
+  const betType = betTypeForZone(zoneId)
   if (!betType) return
   if (betType === 'hopEasy' || betType === 'hopHard') {
     hopPicker.value = { open: true, type: betType }
@@ -259,6 +287,9 @@ function handleRoll() {
   // Save bet config before roll (for Same Bet)
   saveCurrentBets()
 
+  // The other players get their bets down before the dice go out
+  betBeforeRoll()
+
   const { die1: d1, die2: d2 } = rollDice()
   pendingDie1.value = d1
   pendingDie2.value = d2
@@ -267,7 +298,14 @@ function handleRoll() {
 
   trackedTimeout(() => {
     try {
-      executeRoll(d1, d2)
+      const { resolutions } = executeRoll(d1, d2)
+      // The roll is paid: betting reopens, and bots that press or regress
+      // after a win adjust their bets now.
+      store.diceInAir = false
+      reactToRoll(resolutions)
+      // ...and set up for the next roll straight away, so their chips are
+      // already down while the hero is deciding.
+      betBeforeRoll()
       if (!rapidPlay.value) showPayoutAnimations()
     } finally {
       pendingDie1.value = null
@@ -484,7 +522,7 @@ function handleAdvisorBet(betType: BetType) {
         <div class="table-area flex-1 flex items-center justify-center px-2 relative min-h-0">
           <div class="table-wrapper relative">
             <TableCrapsTable
-              :active-bets="store.activeBets"
+              :active-bets="store.heroBets"
               :disabled-zones="takeDownMode ? EMPTY_SET : disabledZones"
               :puck-state="store.puckState"
               :puck-point="store.point"
@@ -537,6 +575,8 @@ function handleAdvisorBet(betType: BetType) {
             :take-down-mode="takeDownMode"
             :has-same-bet="lastBetConfig.length > 0"
             :hero-is-shooting="heroIsShooting"
+            :number-bet-mode="numberBetMode"
+            @update:number-bet-mode="numberBetMode = $event"
             @roll="handleRoll"
             @toggle-take-down="takeDownMode = !takeDownMode"
             @same-bet="placeSameBet"

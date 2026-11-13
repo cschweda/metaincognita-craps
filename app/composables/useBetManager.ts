@@ -11,7 +11,7 @@ import {
 } from '~/utils/betTypes'
 import { formatCents } from '~/utils/format'
 import { getUpfrontVig } from '~/engine/payouts'
-import { canRemoveBet, findOrphanedOdds, getDefaultWorking, isOddsType, resolveOddsTarget } from '~/engine/betting'
+import { canRemoveBet, canToggleWorking, findOrphanedOdds, getDefaultWorking, isOddsType, resolveOddsTarget } from '~/engine/betting'
 
 interface ValidationResult {
   valid: boolean
@@ -258,11 +258,9 @@ export function useBetManager() {
     const bet = store.activeBets.find(b => b.id === betId)
     if (!bet) return false
 
-    // Lay bets and Don't odds are always working - cannot toggle off
-    if (isLayBet(bet.type) || bet.type === 'dontComeOdds' || bet.type === 'dontPassOdds') {
-      console.warn('This bet is always working and cannot be toggled off')
-      return false
-    }
+    // Only bets whose working flag the resolver honours can be called off;
+    // lay bets, don't-side odds, line bets and one-roll bets always work.
+    if (!canToggleWorking(bet.type)) return false
 
     bet.isWorking = !bet.isWorking
     return true
