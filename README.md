@@ -23,6 +23,7 @@ Play at your own pace, or flip on auto-roll and rapid mode to grind through thou
 - **44 bet types** — every standard casino craps wager: Pass, Don't Pass, Come, Odds, Place, Buy, Lay, Field, Hardways, Props, Horn, C&E, Big 6/8, and Hop bets
 - **Rapid play + auto-roll** — skip animations and auto-roll on a timer to simulate hundreds of rolls per minute and watch the statistics converge
 - **Same Bet button** — one click re-places your previous bet configuration for steady grinding
+- **Guided tutorial** — a 29-step walkthrough of one full round with pre-arranged dice: every roll explained, one action at a time, with the spot to click highlighted on the table
 - **8 bot co-bettors** — watch Conservative Carl, Martingale Mike, Iron Cross Irene, and five other named strategies play alongside you with their own bankrolls
 - **Session stats** — roll distribution charts, per-bet-type win/loss tracking, P&L over time, point conversion rates, and gambler's fallacy warnings
 - **Configurable everything** — 5 stake levels ($5–$500 tables), odds multiples (1x to 100x), field payouts, vig timing, payout rounding

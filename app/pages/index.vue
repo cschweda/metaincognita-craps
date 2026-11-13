@@ -2,6 +2,7 @@
 import { crapsConfig } from '~~/craps.config'
 import type { TableRules } from '~/utils/betTypes'
 import { useCrapsStore } from '~/stores/craps'
+import { TUTORIAL_BANKROLL, TUTORIAL_STAKE_LEVEL } from '~/utils/tutorial'
 
 const store = useCrapsStore()
 const router = useRouter()
@@ -50,6 +51,23 @@ function startGame() {
     bots: bots.value
   })
 
+  router.push('/table')
+}
+
+/**
+ * The guided tutorial plays one scripted round at a fixed table — standard
+ * stakes, default rules, nobody else betting — so its numbers always match
+ * what the text says.
+ */
+function startTutorial() {
+  store.initializeGame({
+    heroName: heroName.value.trim() || 'Hero',
+    bankroll: TUTORIAL_BANKROLL,
+    stakeLevel: TUTORIAL_STAKE_LEVEL,
+    tableRules: {},
+    bots: []
+  })
+  store.tutorialStep = 0
   router.push('/table')
 }
 </script>
@@ -132,6 +150,22 @@ function startGame() {
           }"
           @click="startGame"
         />
+
+        <!-- Guided tutorial -->
+        <div class="text-center space-y-1.5">
+          <UButton
+            size="lg"
+            block
+            variant="outline"
+            color="warning"
+            icon="i-lucide-graduation-cap"
+            label="New to craps? Take the guided tutorial"
+            @click="startTutorial"
+          />
+          <p class="text-neutral-500 text-xs">
+            One full round, step by step, with every roll explained. About five minutes.
+          </p>
+        </div>
       </div>
 
       <!-- Footer note -->

@@ -4,6 +4,7 @@ import { BET_TYPE_TO_ZONE } from '~/utils/betTypes'
 import { crapsConfig } from '~~/craps.config'
 import { rollDice } from '~/engine/rng'
 import { canRemoveBet } from '~/engine/betting'
+import { TUTORIAL_STEPS } from '~/utils/tutorial'
 
 const store = useCrapsStore()
 const router = useRouter()
@@ -27,6 +28,37 @@ onMounted(() => {
       return
     }
   }
+})
+
+// ── Guided tutorial ──
+// While it runs, exactly one control is live at a time: the spot or button
+// the current step asks for. Everything else waits.
+const tutorialStep = computed(() =>
+  store.tutorialStep === null ? null : TUTORIAL_STEPS[store.tutorialStep] ?? null
+)
+const tutorialTask = computed(() => tutorialStep.value?.task ?? null)
+const tutorialZone = computed(() => tutorialTask.value?.kind === 'bet' ? tutorialTask.value.zone : null)
+const tutorialFocus = computed(() => {
+  const task = tutorialTask.value
+  if (!task) return null
+  return task.kind === 'roll' || task.kind === 'odds' ? task.kind : 'none'
+})
+const tutorialResults = computed(() => store.lastResolutions.filter(r => r.owner === 'hero'))
+
+function advanceTutorial() {
+  if (store.tutorialStep === null) return
+  const next = store.tutorialStep + 1
+  store.tutorialStep = next < TUTORIAL_STEPS.length ? next : null
+}
+function exitTutorial() {
+  store.tutorialStep = null
+}
+
+// A bet step is done the moment the bet it asked for is on the table.
+watch(() => store.heroBets.map(b => b.type), (types) => {
+  const task = tutorialTask.value
+  if (task?.kind === 'bet' && types.includes(task.betType)) advanceTutorial()
+  if (task?.kind === 'odds' && types.includes('passOdds')) advanceTutorial()
 })
 
 // ── Dice state ──
@@ -154,6 +186,9 @@ const EMPTY_SET = new Set<string>()
 
 const disabledZones = computed(() => {
   const disabled = new Set<string>()
+  // The tutorial gates clicks itself (see handleZoneClick) so the table is
+  // not greyed out while the player is meant to be watching it.
+  if (tutorialStep.value) return disabled
   for (const zoneId of Object.keys(ZONE_TO_BET_TYPE)) {
     const validation = validateBet(betTypeForZone(zoneId)!, store.selectedChipValue, 'hero', {
       phase: store.phase, point: store.point, activeBets: store.activeBets,
@@ -178,6 +213,7 @@ function placeHopBet(target: number) {
 // ── Zone click: place or remove ──
 function handleZoneClick(zoneId: string) {
   if (studyMode.value) return
+  if (tutorialStep.value && zoneId !== tutorialZone.value) return
   if (store.diceInAir) {
     toast.add({ title: 'No more bets', description: 'The dice are out — wait for the roll to land.', color: 'warning' })
     return
@@ -202,7 +238,10 @@ function handleZoneClick(zoneId: string) {
     if (autoRoll.value) stopAutoRollTimer()
     return
   }
-  const placed = placeBet(betType, store.selectedChipValue, 'hero')
+  // Tutorial bets are always the table minimum, so its numbers hold whatever
+  // chip happens to be selected.
+  const amount = tutorialStep.value ? store.tableRules.minBet : store.selectedChipValue
+  const placed = placeBet(betType, amount, 'hero')
   if (!placed) {
     const validation = validateBet(betType, store.selectedChipValue, 'hero', {
       phase: store.phase, point: store.point, activeBets: store.activeBets,
@@ -231,6 +270,7 @@ const needsLineBet = computed(() =>
 
 const canRoll = computed(() =>
   !diceRolling.value && !studyMode.value && ['COME_OUT', 'POINT_PHASE'].includes(store.phase) && !needsLineBet.value
+  && (!tutorialTask.value || tutorialTask.value.kind === 'roll')
 )
 
 // Out of action: nothing on the felt and not enough in the rack to bet.
@@ -244,6 +284,7 @@ const heroIsOut = computed(() => {
 const rollBlockedReason = computed(() => {
   if (diceRolling.value) return 'Rolling...'
   if (studyMode.value) return 'Study Mode is on — turn it off to roll'
+  if (tutorialTask.value && tutorialTask.value.kind !== 'roll') return 'Follow the tutorial step above first'
   if (!['COME_OUT', 'POINT_PHASE'].includes(store.phase)) return 'Waiting for next phase'
   if (needsLineBet.value) {
     return heroIsOut.value
@@ -290,7 +331,9 @@ function handleRoll() {
   // The other players get their bets down before the dice go out
   betBeforeRoll()
 
-  const { die1: d1, die2: d2 } = rollDice()
+  // The tutorial's dice are pre-arranged; everything after the throw is real.
+  const scripted = tutorialTask.value?.kind === 'roll' ? tutorialTask.value.dice : null
+  const { die1: d1, die2: d2 } = scripted ? { die1: scripted[0], die2: scripted[1] } : rollDice()
   pendingDie1.value = d1
   pendingDie2.value = d2
   diceRolling.value = true
@@ -307,6 +350,7 @@ function handleRoll() {
       // already down while the hero is deciding.
       betBeforeRoll()
       if (!rapidPlay.value) showPayoutAnimations()
+      if (scripted) advanceTutorial()
     } finally {
       pendingDie1.value = null
       pendingDie2.value = null
@@ -368,10 +412,12 @@ function confirmNewGame() {
 // ── Sidebar ──
 const showSidebar = ref(typeof window !== 'undefined' ? window.innerWidth >= 1024 : true)
 const hero = computed(() => store.hero)
+// The tutorial is the only voice on screen while it runs.
+const sidebarOpen = computed(() => showSidebar.value && !tutorialStep.value)
 
 // ── Advisor "DO THIS" handler ──
 function handleAdvisorBet(betType: BetType) {
-  if (studyMode.value) return
+  if (studyMode.value || tutorialStep.value) return
 
   // For odds bets, place max odds
   if (betType === 'passOdds' || betType === 'dontPassOdds') {
@@ -417,71 +463,73 @@ function handleAdvisorBet(betType: BetType) {
       <div class="flex flex-wrap items-center gap-2">
         <span class="text-neutral-500 text-xs">Roll #{{ store.rollNumber }}</span>
 
-        <!-- Rapid play toggle -->
-        <button
-          class="text-[10px] px-2 py-0.5 rounded border transition-colors"
-          :class="rapidPlay
-            ? 'border-amber-500 text-amber-400 bg-amber-500/10'
-            : 'border-neutral-700 text-neutral-500 hover:text-neutral-300'"
-          title="Rapid Play: skip dice animation for faster rolls"
-          @click="rapidPlay = !rapidPlay"
-        >
-          {{ rapidPlay ? 'RAPID ⚡' : 'Normal' }}
-        </button>
+        <template v-if="!tutorialStep">
+          <!-- Rapid play toggle -->
+          <button
+            class="text-[10px] px-2 py-0.5 rounded border transition-colors"
+            :class="rapidPlay
+              ? 'border-amber-500 text-amber-400 bg-amber-500/10'
+              : 'border-neutral-700 text-neutral-500 hover:text-neutral-300'"
+            title="Rapid Play: skip dice animation for faster rolls"
+            @click="rapidPlay = !rapidPlay"
+          >
+            {{ rapidPlay ? 'RAPID ⚡' : 'Normal' }}
+          </button>
 
-        <!-- Auto-roll toggle -->
-        <button
-          class="text-[10px] px-2 py-0.5 rounded border transition-colors"
-          :class="autoRoll
-            ? 'border-emerald-500 text-emerald-400 bg-emerald-500/10'
-            : 'border-neutral-700 text-neutral-500 hover:text-neutral-300'"
-          :title="autoRoll ? 'Auto-roll ON — click to stop' : 'Auto-roll: automatically roll dice on a timer'"
-          @click="autoRoll = !autoRoll; if (autoRoll && canRoll) startAutoRollTimer()"
-        >
-          {{ autoRoll ? 'AUTO ●' : 'Auto' }}
-        </button>
+          <!-- Auto-roll toggle -->
+          <button
+            class="text-[10px] px-2 py-0.5 rounded border transition-colors"
+            :class="autoRoll
+              ? 'border-emerald-500 text-emerald-400 bg-emerald-500/10'
+              : 'border-neutral-700 text-neutral-500 hover:text-neutral-300'"
+            :title="autoRoll ? 'Auto-roll ON — click to stop' : 'Auto-roll: automatically roll dice on a timer'"
+            @click="autoRoll = !autoRoll; if (autoRoll && canRoll) startAutoRollTimer()"
+          >
+            {{ autoRoll ? 'AUTO ●' : 'Auto' }}
+          </button>
 
-        <!-- Auto-roll speed selector -->
-        <select
-          v-if="autoRoll"
-          v-model.number="autoRollSpeed"
-          class="text-[10px] bg-neutral-800 text-neutral-400 border border-neutral-700 rounded px-1 py-0.5"
-          title="Time between auto-rolls"
-        >
-          <option :value="1000">
-            1s
-          </option>
-          <option :value="2000">
-            2s
-          </option>
-          <option :value="3000">
-            3s
-          </option>
-          <option :value="5000">
-            5s
-          </option>
-        </select>
+          <!-- Auto-roll speed selector -->
+          <select
+            v-if="autoRoll"
+            v-model.number="autoRollSpeed"
+            class="text-[10px] bg-neutral-800 text-neutral-400 border border-neutral-700 rounded px-1 py-0.5"
+            title="Time between auto-rolls"
+          >
+            <option :value="1000">
+              1s
+            </option>
+            <option :value="2000">
+              2s
+            </option>
+            <option :value="3000">
+              3s
+            </option>
+            <option :value="5000">
+              5s
+            </option>
+          </select>
 
-        <!-- Study mode toggle -->
-        <button
-          class="text-[10px] px-2 py-0.5 rounded border transition-colors"
-          :class="studyMode
-            ? 'border-blue-500 text-blue-400 bg-blue-500/10'
-            : 'border-neutral-700 text-neutral-500 hover:text-neutral-300'"
-          :title="studyMode ? 'Study Mode ON — hover zones for explanations. Click to exit.' : 'Study Mode: pause game and explore every bet on the table'"
-          @click="studyMode = !studyMode"
-        >
-          {{ studyMode ? 'STUDY' : 'Study' }}
-        </button>
+          <!-- Study mode toggle -->
+          <button
+            class="text-[10px] px-2 py-0.5 rounded border transition-colors"
+            :class="studyMode
+              ? 'border-blue-500 text-blue-400 bg-blue-500/10'
+              : 'border-neutral-700 text-neutral-500 hover:text-neutral-300'"
+            :title="studyMode ? 'Study Mode ON — hover zones for explanations. Click to exit.' : 'Study Mode: pause game and explore every bet on the table'"
+            @click="studyMode = !studyMode"
+          >
+            {{ studyMode ? 'STUDY' : 'Study' }}
+          </button>
 
-        <UButton
-          size="xs"
-          variant="ghost"
-          color="neutral"
-          :icon="showSidebar ? 'i-lucide-panel-right-close' : 'i-lucide-panel-right-open'"
-          title="Toggle stats/advisor panel"
-          @click="showSidebar = !showSidebar"
-        />
+          <UButton
+            size="xs"
+            variant="ghost"
+            color="neutral"
+            :icon="showSidebar ? 'i-lucide-panel-right-close' : 'i-lucide-panel-right-open'"
+            title="Toggle stats/advisor panel"
+            @click="showSidebar = !showSidebar"
+          />
+        </template>
         <UButton
           size="xs"
           variant="outline"
@@ -497,6 +545,18 @@ function handleAdvisorBet(betType: BetType) {
     <div class="flex-1 flex overflow-hidden min-h-0">
       <!-- Left: table area -->
       <div class="flex-1 flex flex-col min-w-0 min-h-0">
+        <!-- Guided tutorial -->
+        <TableTutorialCard
+          v-if="tutorialStep"
+          :step="tutorialStep"
+          :index="store.tutorialStep!"
+          :total="TUTORIAL_STEPS.length"
+          :rules="store.tableRules"
+          :results="tutorialResults"
+          @next="advanceTutorial"
+          @exit="exitTutorial"
+        />
+
         <!-- Stickman call -->
         <div class="h-10 flex items-center justify-center shrink-0">
           <TableStickmanCall />
@@ -524,6 +584,7 @@ function handleAdvisorBet(betType: BetType) {
             <TableCrapsTable
               :active-bets="store.heroBets"
               :disabled-zones="takeDownMode ? EMPTY_SET : disabledZones"
+              :highlight-zone="tutorialZone"
               :puck-state="store.puckState"
               :puck-point="store.point"
               :study-mode="studyMode"
@@ -576,6 +637,7 @@ function handleAdvisorBet(betType: BetType) {
             :has-same-bet="lastBetConfig.length > 0"
             :hero-is-shooting="heroIsShooting"
             :number-bet-mode="numberBetMode"
+            :tutorial-focus="tutorialFocus"
             @update:number-bet-mode="numberBetMode = $event"
             @roll="handleRoll"
             @toggle-take-down="takeDownMode = !takeDownMode"
@@ -594,7 +656,7 @@ function handleAdvisorBet(betType: BetType) {
         class="border-l border-neutral-800 shrink-0 transition-all duration-200 overflow-hidden min-h-0
                fixed inset-y-0 right-0 z-30 w-80 max-w-[85vw] bg-neutral-950
                lg:static lg:z-auto lg:bg-transparent lg:w-80"
-        :class="showSidebar ? 'translate-x-0 lg:max-w-80' : 'translate-x-full lg:translate-x-0 lg:max-w-0 lg:border-l-0'"
+        :class="sidebarOpen ? 'translate-x-0 lg:max-w-80' : 'translate-x-full lg:translate-x-0 lg:max-w-0 lg:border-l-0'"
       >
         <StatsAdvisorPanel @advisor-bet="handleAdvisorBet" />
       </aside>
@@ -659,17 +721,19 @@ function handleAdvisorBet(betType: BetType) {
   animation: float-up 1.5s ease-out forwards;
 }
 
-/* Table area: the SVG must fit entirely within this box (no clipping) */
+/* Table area: the SVG must fit entirely within this box, whichever of the
+   box's two dimensions is the tighter one. (Sizing from the width alone let
+   the table spill over the dice and controls on a wide, short window — most
+   visibly with the sidebar closed.) */
 .table-area {
-  overflow: visible;
+  container-type: size;
+  overflow: hidden;
 }
 
 .table-wrapper {
-  max-width: 1100px;
-  width: 100%;
-  max-height: 100%;
   /* Aspect ratio matches the SVG viewBox (1240:640 with padding) */
   aspect-ratio: 1240 / 640;
+  width: min(100cqw, 100cqh * 1240 / 640, 1100px);
 }
 
 .table-page :deep(.craps-table) {
