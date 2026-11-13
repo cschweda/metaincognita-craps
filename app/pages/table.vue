@@ -90,12 +90,19 @@ watch(studyMode, (on) => {
 })
 
 // ── Same Bet tracking ──
-const lastBetConfig = ref<Array<{ type: BetType, amount: number }>>([])
+// Hop and Horn High bets carry their target number on pointNumber; without it
+// a hop bet cannot be re-placed at all and a Horn High silently reverts to 11.
+const lastBetConfig = ref<Array<{ type: BetType, amount: number, target: number | null }>>([])
+const TARGETED_BETS: BetType[] = ['hopEasy', 'hopHard', 'hornHigh']
 
 function saveCurrentBets() {
   lastBetConfig.value = store.activeBets
     .filter(b => b.owner === 'hero' && b.status !== 'resolved')
-    .map(b => ({ type: b.type, amount: b.amount }))
+    .map(b => ({
+      type: b.type,
+      amount: b.amount,
+      target: TARGETED_BETS.includes(b.type) ? b.pointNumber : null
+    }))
 }
 
 function placeSameBet() {
@@ -104,17 +111,11 @@ function placeSameBet() {
     // Skip bets that are already active
     const alreadyHas = store.activeBets.some(
       b => b.owner === 'hero' && b.type === prev.type && b.status !== 'resolved'
+        && (prev.target === null || b.pointNumber === prev.target)
     )
     if (alreadyHas) continue
-    // Skip bets invalid for current phase
-    const validation = validateBet(prev.type, prev.amount, 'hero', {
-      phase: store.phase, point: store.point, activeBets: store.activeBets,
-      tableRules: store.tableRules, rollNumber: store.rollNumber,
-      dontBetRemovedThisCycle: store.dontBetRemovedThisCycle
-    })
-    if (validation.valid) {
-      placeBet(prev.type, prev.amount, 'hero')
-    }
+    // placeBet validates against the current phase and skips what doesn't fit
+    placeBet(prev.type, prev.amount, 'hero', prev.target)
   }
 }
 
@@ -147,6 +148,10 @@ function placeHopBet(target: number) {
 // ── Zone click: place or remove ──
 function handleZoneClick(zoneId: string) {
   if (studyMode.value) return
+  if (store.diceInAir) {
+    toast.add({ title: 'No more bets', description: 'The dice are out — wait for the roll to land.', color: 'warning' })
+    return
+  }
   if (takeDownMode.value) {
     // Remove the hero's bet on this zone
     const bet = store.activeBets.find(
@@ -187,14 +192,36 @@ const heroHasLineBet = computed(() =>
   store.activeBets.some(b => b.owner === 'hero' && b.status !== 'resolved' && (b.type === 'pass' || b.type === 'dontPass'))
 )
 
-const canRoll = computed(() =>
-  !diceRolling.value && !studyMode.value && ['COME_OUT', 'POINT_PHASE'].includes(store.phase) && heroHasLineBet.value
+// MBS 3.7 obliges the SHOOTER to have a line bet before a come-out roll.
+// It does not apply once a point is on, nor when someone else is shooting.
+// (Requiring a line bet in every phase soft-locked the table: take down a
+// Don't Pass after the point and you could neither roll nor — since line
+// bets only go up on the come-out — ever place another one.)
+const needsLineBet = computed(() =>
+  store.phase === 'COME_OUT' && store.shooterSeat === 0 && !heroHasLineBet.value
 )
+
+const canRoll = computed(() =>
+  !diceRolling.value && !studyMode.value && ['COME_OUT', 'POINT_PHASE'].includes(store.phase) && !needsLineBet.value
+)
+
+// Out of action: nothing on the felt and not enough in the rack to bet.
+const heroIsOut = computed(() => {
+  const hero = store.hero
+  if (!hero || store.phase === 'SETUP') return false
+  const hasBets = store.activeBets.some(b => b.owner === 'hero' && b.status !== 'resolved')
+  return !hasBets && hero.bankroll < store.tableRules.minBet
+})
 
 const rollBlockedReason = computed(() => {
   if (diceRolling.value) return 'Rolling...'
+  if (studyMode.value) return 'Study Mode is on — turn it off to roll'
   if (!['COME_OUT', 'POINT_PHASE'].includes(store.phase)) return 'Waiting for next phase'
-  if (!heroHasLineBet.value) return 'Place a Pass Line or Don\'t Pass bet first (MBS Rule 3.7)'
+  if (needsLineBet.value) {
+    return heroIsOut.value
+      ? 'You are out of chips — start a new game'
+      : 'Place a Pass Line or Don\'t Pass bet first (MBS Rule 3.7)'
+  }
   return ''
 })
 
@@ -236,6 +263,7 @@ function handleRoll() {
   pendingDie1.value = d1
   pendingDie2.value = d2
   diceRolling.value = true
+  store.diceInAir = true // no more bets: the outcome is fixed from here
 
   trackedTimeout(() => {
     try {
@@ -245,6 +273,7 @@ function handleRoll() {
       pendingDie1.value = null
       pendingDie2.value = null
       diceRolling.value = false
+      store.diceInAir = false
     }
     // Queue next auto-roll if enabled
     if (autoRoll.value) {
@@ -276,6 +305,8 @@ onUnmounted(() => {
   pendingTimers.clear()
   window.removeEventListener('keydown', onKeydown)
   window.removeEventListener('pagehide', flushSession)
+  // A roll cancelled mid-animation never resolved; reopen betting.
+  store.diceInAir = false
   flushSession()
 })
 
@@ -431,6 +462,22 @@ function handleAdvisorBet(betType: BetType) {
         <!-- Stickman call -->
         <div class="h-10 flex items-center justify-center shrink-0">
           <TableStickmanCall />
+        </div>
+
+        <!-- Out of chips: every bet is below the table minimum from here -->
+        <div
+          v-if="heroIsOut"
+          role="status"
+          class="mx-auto mb-1 flex flex-wrap items-center justify-center gap-3 rounded-lg border border-amber-500/40 bg-amber-500/10 px-4 py-2 text-sm text-amber-200 shrink-0"
+        >
+          <span>You're out of chips — your bankroll is below the {{ formatCents(store.tableRules.minBet) }} table minimum.</span>
+          <UButton
+            size="xs"
+            color="warning"
+            variant="solid"
+            label="New Game"
+            @click="requestNewGame"
+          />
         </div>
 
         <!-- Craps table + payout floaters -->

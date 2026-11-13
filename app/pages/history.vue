@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { crapsConfig } from '~~/craps.config'
+
 const store = useCrapsStore()
 
 // Load session if needed (user navigated directly)
@@ -11,6 +13,7 @@ onMounted(() => {
 const hasSession = computed(() => store.phase !== 'SETUP')
 const rollHistory = computed(() => store.rollHistory)
 const sessionStats = computed(() => store.sessionStats)
+const historySize = crapsConfig.stats.rollHistorySize
 </script>
 
 <template>
@@ -21,7 +24,7 @@ const sessionStats = computed(() => store.sessionStats)
           Roll History
         </h1>
         <p class="text-sm text-neutral-500">
-          Complete roll-by-roll record of your session.
+          Roll-by-roll record of your session (most recent {{ historySize }} rolls).
         </p>
       </div>
 
