@@ -26,6 +26,51 @@ export function isOddsType(type: BetType): type is OddsType {
 
 const isLive = (b: ActiveBet) => b.status !== 'resolved'
 
+export interface OddsRoom {
+  /** The point these odds would ride on. */
+  point: number
+  /** Table limit for odds behind the flat bet(s) on this point. */
+  max: number
+  /** Odds already riding there. */
+  existing: number
+  remaining: number
+}
+
+/**
+ * Every spot where `owner` could put odds of this type, with how much room
+ * the table limit leaves on each. Line odds have at most one spot (the table
+ * point); come-side odds have one per established come point, in placement
+ * order. Empty when there is no flat bet to back.
+ */
+export function listOddsRoom(
+  type: OddsType,
+  owner: string,
+  activeBets: ActiveBet[],
+  tablePoint: number | null,
+  oddsMultiple: string
+): OddsRoom[] {
+  const isLine = type === 'passOdds' || type === 'dontPassOdds'
+  const isDont = type === 'dontPassOdds' || type === 'dontComeOdds'
+  const mine = activeBets.filter(b => b.owner === owner && isLive(b))
+  const parents = mine.filter(b => b.type === ODDS_PARENT[type] && (isLine || b.pointNumber !== null))
+  if (parents.length === 0) return []
+  if (isLine && !tablePoint) return []
+
+  const points = isLine ? [tablePoint!] : [...new Set(parents.map(b => b.pointNumber!))]
+  return points.map((point) => {
+    const flat = parents
+      .filter(b => isLine || b.pointNumber === point)
+      .reduce((sum, b) => sum + b.amount, 0)
+    const max = isDont
+      ? getMaxLayOdds(flat, point, oddsMultiple)
+      : getMaxOdds(flat, point, oddsMultiple)
+    const existing = mine
+      .filter(b => b.type === type && b.pointNumber === point)
+      .reduce((sum, b) => sum + b.amount, 0)
+    return { point, max, existing, remaining: Math.max(0, max - existing) }
+  })
+}
+
 /**
  * Decide which point an odds bet rides on and whether it fits under the
  * table's odds limit.
@@ -47,49 +92,30 @@ export function resolveOddsTarget(
   oddsMultiple: string,
   targetPoint?: number | null
 ): { ok: true, point: number } | { ok: false, reason: string } {
-  const parentType = ODDS_PARENT[type]
   const label = ODDS_LABEL[type]
   const isLine = type === 'passOdds' || type === 'dontPassOdds'
-  const isDont = type === 'dontPassOdds' || type === 'dontComeOdds'
-  const mine = activeBets.filter(b => b.owner === owner && isLive(b))
-
-  const parents = mine.filter(b => b.type === parentType && (isLine || b.pointNumber !== null))
-  if (parents.length === 0) {
+  const hasParent = activeBets.some(b =>
+    b.owner === owner && isLive(b) && b.type === ODDS_PARENT[type] && (isLine || b.pointNumber !== null)
+  )
+  if (!hasParent) {
     return { ok: false, reason: `Must have ${label.parent} to place ${label.odds}` }
   }
+  if (isLine && !tablePoint) {
+    return { ok: false, reason: `${label.odds} can only be placed after a point is established` }
+  }
 
-  let points: number[]
-  if (isLine) {
-    if (!tablePoint) {
-      return { ok: false, reason: `${label.odds} can only be placed after a point is established` }
-    }
-    points = [tablePoint]
-  } else {
-    points = [...new Set(parents.map(b => b.pointNumber!))]
-    if (targetPoint != null) {
-      if (!points.includes(targetPoint)) {
-        return { ok: false, reason: `Must have ${label.parent} on ${targetPoint} to place ${label.odds} there` }
-      }
-      points = [targetPoint]
+  let rooms = listOddsRoom(type, owner, activeBets, tablePoint, oddsMultiple)
+  if (!isLine && targetPoint != null) {
+    rooms = rooms.filter(r => r.point === targetPoint)
+    if (rooms.length === 0) {
+      return { ok: false, reason: `Must have ${label.parent} on ${targetPoint} to place ${label.odds} there` }
     }
   }
 
-  let bestRemaining = 0
-  for (const point of points) {
-    const flat = parents
-      .filter(b => isLine || b.pointNumber === point)
-      .reduce((sum, b) => sum + b.amount, 0)
-    const max = isDont
-      ? getMaxLayOdds(flat, point, oddsMultiple)
-      : getMaxOdds(flat, point, oddsMultiple)
-    const existing = mine
-      .filter(b => b.type === type && b.pointNumber === point)
-      .reduce((sum, b) => sum + b.amount, 0)
-    const remaining = max - existing
-    if (amount <= remaining) return { ok: true, point }
-    bestRemaining = Math.max(bestRemaining, remaining)
-  }
+  const fit = rooms.find(r => amount <= r.remaining)
+  if (fit) return { ok: true, point: fit.point }
 
+  const bestRemaining = Math.max(0, ...rooms.map(r => r.remaining))
   return {
     ok: false,
     reason: bestRemaining > 0
@@ -134,6 +160,25 @@ export function canRemoveBet(bet: ActiveBet, tablePoint: number | null): { allow
     return { allowed: false, reason: 'Come bets are contract bets — they cannot be removed once their point is established' }
   }
   return { allowed: true, reason: '' }
+}
+
+/**
+ * Bets a real dealer leaves up after paying them: the player collects the
+ * winnings and the wager keeps working until it loses or is taken down.
+ * (Line, come, odds and one-roll bets are paid and returned.)
+ */
+export function staysUpAfterWin(type: BetType): boolean {
+  return isPlaceBet(type) || isBuyBet(type) || isLayBet(type) || isHardwayBet(type)
+    || type === 'big6' || type === 'big8'
+}
+
+/**
+ * Bets the player may call ON or OFF. These are exactly the bets whose
+ * `isWorking` flag the resolver honours; everything else is always in action.
+ */
+export function canToggleWorking(type: BetType): boolean {
+  return isPlaceBet(type) || isBuyBet(type) || isHardwayBet(type)
+    || type === 'passOdds' || type === 'comeOdds'
 }
 
 /** Single source of truth for default working status (was duplicated in 3 places). */

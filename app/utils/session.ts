@@ -78,7 +78,7 @@ function parsePlayers(v: unknown): PlayerState[] | null {
   const ids = new Set<string>()
   for (const [i, item] of v.entries()) {
     if (!isRec(item)) return null
-    const { id, name, bankroll, startingBankroll, isBusted, strategy } = item
+    const { id, name, bankroll, startingBankroll, isBusted, strategy, lossStreak } = item
     // Seat 0 is always the hero; every other seat is a bot.
     const expectedId = i === 0 ? 'hero' : /^bot-\d+$/
     if (typeof id !== 'string' || ids.has(id)) return null
@@ -97,6 +97,8 @@ function parsePlayers(v: unknown): PlayerState[] | null {
       isHero: i === 0,
       isBusted: isBool(isBusted) ? isBusted : false,
       strategy: typeof strategy === 'string' ? strategy.slice(0, 64) : null,
+      // Absent in sessions saved before bots placed bets.
+      lossStreak: isCount(lossStreak) && lossStreak <= 64 ? lossStreak : 0,
       bankrollHistory: history
     })
   }

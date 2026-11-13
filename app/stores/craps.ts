@@ -2,6 +2,8 @@ import { defineStore } from 'pinia'
 import type { GamePhase, DiceRoll, ActiveBet, BetResolution, TableRules, PlayerState, SessionStats } from '~/utils/betTypes'
 import { resetBetIdCounter, syncBetIdCounter } from '~/utils/betTypes'
 import { parseSession } from '~/utils/session'
+import { staysUpAfterWin } from '~/engine/betting'
+import { getUpfrontVig } from '~/engine/payouts'
 import { crapsConfig } from '~~/craps.config'
 
 export const useCrapsStore = defineStore('craps', {
@@ -119,6 +121,7 @@ export const useCrapsStore = defineStore('craps', {
           isHero: true,
           isBusted: false,
           strategy: null,
+          lossStreak: 0,
           bankrollHistory: [config.bankroll]
         },
         ...config.bots.map((bot, i) => ({
@@ -129,6 +132,7 @@ export const useCrapsStore = defineStore('craps', {
           isHero: false,
           isBusted: false,
           strategy: bot.strategy,
+          lossStreak: 0,
           bankrollHistory: [config.bankroll]
         }))
       ]
@@ -196,14 +200,21 @@ export const useCrapsStore = defineStore('craps', {
       if (player) {
         player.bankroll -= bet.amount + upfrontVig
       }
+      // Session stats describe the hero's play; bots keep their own bankrolls.
+      if (!player?.isHero) return
+      this.recordWager(bet)
+      this.sessionStats.betTypeStats[bet.type]!.netProfitLoss -= upfrontVig
+      this.sessionStats.totalProfitLoss -= upfrontVig
+    },
+
+    /** Count one wager's worth of action in the hero's stats. */
+    recordWager(bet: ActiveBet) {
       this.sessionStats.totalWagered += bet.amount
       const stats = this.sessionStats.betTypeStats[bet.type] ??= {
         timesPlaced: 0, won: 0, lost: 0, pushed: 0, totalWagered: 0, netProfitLoss: 0
       }
       stats.timesPlaced++
       stats.totalWagered += bet.amount
-      stats.netProfitLoss -= upfrontVig
-      if (player?.isHero) this.sessionStats.totalProfitLoss -= upfrontVig
     },
 
     /**
@@ -222,14 +233,16 @@ export const useCrapsStore = defineStore('craps', {
       if (player) {
         player.bankroll += bet.amount + refund
       }
-      this.sessionStats.totalWagered = Math.max(0, this.sessionStats.totalWagered - bet.amount)
-      const stats = this.sessionStats.betTypeStats[bet.type]
-      if (stats) {
-        stats.timesPlaced = Math.max(0, stats.timesPlaced - 1)
-        stats.totalWagered = Math.max(0, stats.totalWagered - bet.amount)
-        stats.netProfitLoss += refund
+      if (player?.isHero) {
+        this.sessionStats.totalWagered = Math.max(0, this.sessionStats.totalWagered - bet.amount)
+        const stats = this.sessionStats.betTypeStats[bet.type]
+        if (stats) {
+          stats.timesPlaced = Math.max(0, stats.timesPlaced - 1)
+          stats.totalWagered = Math.max(0, stats.totalWagered - bet.amount)
+          stats.netProfitLoss += refund
+        }
+        this.sessionStats.totalProfitLoss += refund
       }
-      if (player?.isHero) this.sessionStats.totalProfitLoss += refund
       if (bet.type === 'dontPass' || bet.type === 'dontCome') {
         this.dontBetRemovedThisCycle.add(`${bet.owner}-${bet.type}`)
       }
@@ -241,50 +254,79 @@ export const useCrapsStore = defineStore('craps', {
       for (const res of resolutions) {
         const bet = this.activeBets.find(b => b.id === res.betId)
         if (!bet) continue
-        bet.status = 'resolved'
-        bet.resolvedOnRoll = this.rollNumber
-
         const player = this.players.find(p => p.id === res.owner)
         if (!player) continue
 
-        if (res.outcome === 'win') {
-          player.bankroll += res.payout
-        } else if (res.outcome === 'push') {
-          player.bankroll += bet.amount
+        // Place, Buy, Lay, Hardway and Big 6/8 bets are paid and left up:
+        // the winnings go to the rack and the wager keeps working. On a
+        // vig-on-bet table a Buy bet owes its vig again for the next decision.
+        const staysUp = res.outcome === 'win' && staysUpAfterWin(bet.type)
+        const nextVig = staysUp ? getUpfrontVig(bet.type, bet.amount, this.tableRules) : 0
+
+        if (staysUp) {
+          player.bankroll += res.payout - bet.amount - nextVig
+        } else {
+          bet.status = 'resolved'
+          bet.resolvedOnRoll = this.rollNumber
+          if (res.outcome === 'win') {
+            player.bankroll += res.payout
+          } else if (res.outcome === 'push') {
+            player.bankroll += bet.amount
+          }
+          // loses: wager already deducted on placement
         }
-        // loses: wager already deducted on placement
 
         player.bankrollHistory.push(player.bankroll)
         if (player.bankrollHistory.length > crapsConfig.stats.bankrollHistorySize) {
           player.bankrollHistory.splice(0, player.bankrollHistory.length - crapsConfig.stats.bankrollHistorySize)
         }
 
+        if (!player.isHero) continue
         const stats = this.sessionStats.betTypeStats[bet.type]
         if (stats) {
           if (res.outcome === 'win') stats.won++
           else if (res.outcome === 'lose') stats.lost++
           else if (res.outcome === 'push') stats.pushed++
-          stats.netProfitLoss += res.netGain
+          stats.netProfitLoss += res.netGain - nextVig
         }
-        if (player.isHero) {
-          this.sessionStats.totalProfitLoss += res.netGain
-        }
+        this.sessionStats.totalProfitLoss += res.netGain - nextVig
+        // The wager left up is fresh action on the next decision.
+        if (staysUp) this.recordWager(bet)
       }
       // Clean up resolved bets
       this.activeBets = this.activeBets.filter(b => b.status !== 'resolved')
 
-      // Busted = no chips in the rack AND nothing left riding on the table.
-      // Judged once, after every resolution of the roll has been paid — a
-      // player whose last chips are on the felt is still in the game, and a
-      // loss followed by a win on the same roll is not a bust.
+      this.refreshBusted()
+    },
+
+    /**
+     * Busted = cannot cover the table minimum AND has nothing left riding.
+     * Judged after a whole roll has been paid — a player whose last chips are
+     * on the felt is still in the game, and a loss followed by a win on the
+     * same roll is not a bust.
+     */
+    refreshBusted() {
       for (const player of this.players) {
-        player.isBusted = player.bankroll <= 0 && !this.activeBets.some(b => b.owner === player.id)
+        player.isBusted = player.bankroll < this.tableRules.minBet
+          && !this.activeBets.some(b => b.owner === player.id && b.status !== 'resolved')
       }
     },
 
     advanceShooter() {
       this.shooterRollCount = 0
-      this.shooterSeat = (this.shooterSeat + 1) % this.players.length
+      this.refreshBusted()
+      // The dice pass to the next player still in the game. A busted bot's
+      // seat is skipped; the hero always takes a turn (and with a single
+      // player the dice simply come back).
+      const seats = this.players.length
+      for (let step = 1; step <= seats; step++) {
+        const seat = (this.shooterSeat + step) % seats
+        const player = this.players[seat]!
+        if (player.isHero || !player.isBusted) {
+          this.shooterSeat = seat
+          break
+        }
+      }
       this.dontBetRemovedThisCycle = new Set()
     },
 

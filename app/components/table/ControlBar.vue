@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { crapsConfig } from '~~/craps.config'
+import { listOddsRoom } from '~/engine/betting'
 
 const store = useCrapsStore()
 const { placeBet } = useBetManager()
@@ -10,28 +10,58 @@ const props = defineProps<{
   takeDownMode: boolean
   hasSameBet: boolean
   heroIsShooting: boolean
+  numberBetMode: 'place' | 'buy' | 'lay'
 }>()
 
 const _emit = defineEmits<{
   'roll': []
   'toggle-take-down': []
   'same-bet': []
+  'update:number-bet-mode': [mode: 'place' | 'buy' | 'lay']
 }>()
 
-function quickBet(type: 'pass' | 'come' | 'place6' | 'place8' | 'passOdds' | 'dontPassOdds') {
-  if (type === 'passOdds' || type === 'dontPassOdds') {
-    const lineType = type === 'passOdds' ? 'pass' : 'dontPass'
-    const lineBet = store.activeBets.find(
-      b => b.owner === 'hero' && b.type === lineType && b.status !== 'resolved'
-    )
-    if (!lineBet || !store.point) return
-    const multiples = crapsConfig.oddsMultiples[store.tableRules.oddsMultiple]
-    const maxMultiple = multiples?.[store.point] ?? 1
-    placeBet(type, lineBet.amount * maxMultiple, 'hero')
-  } else {
-    placeBet(type, store.selectedChipValue, 'hero')
+type OddsType = 'passOdds' | 'dontPassOdds' | 'comeOdds' | 'dontComeOdds'
+
+/**
+ * The best odds bet open to the hero right now: line odds first, then odds
+ * behind any established Come / Don't Come bet. Sized to fill the spot to the
+ * table limit, or as close as the bankroll allows.
+ */
+const oddsOffer = computed(() => {
+  const bankroll = store.hero?.bankroll ?? 0
+  const labels: Record<OddsType, string> = {
+    passOdds: 'Max Odds', dontPassOdds: 'Lay Odds', comeOdds: 'Come Odds', dontComeOdds: 'DC Odds'
   }
+  for (const type of Object.keys(labels) as OddsType[]) {
+    for (const room of listOddsRoom(type, 'hero', store.activeBets, store.point, store.tableRules.oddsMultiple)) {
+      const amount = Math.floor(Math.min(room.remaining, bankroll) / 100) * 100
+      if (amount < 100) continue
+      const isLine = type === 'passOdds' || type === 'dontPassOdds'
+      return {
+        type,
+        amount,
+        point: room.point,
+        label: isLine ? labels[type] : `${labels[type]} ${room.point}`
+      }
+    }
+  }
+  return null
+})
+
+function placeOdds() {
+  const offer = oddsOffer.value
+  if (offer) placeBet(offer.type, offer.amount, 'hero', offer.point)
 }
+
+function quickBet(type: 'pass' | 'come' | 'place6' | 'place8') {
+  placeBet(type, store.selectedChipValue, 'hero')
+}
+
+const numberModes = [
+  { key: 'place', label: 'Place', title: 'Number boxes take Place bets — pays 9:5, 7:5 or 7:6' },
+  { key: 'buy', label: 'Buy', title: 'Number boxes take Buy bets — true odds, 5% vig' },
+  { key: 'lay', label: 'Lay', title: 'Number boxes take Lay bets — betting a 7 comes first; 5% vig on the win' }
+] as const
 
 const phaseBadge = computed(() => {
   if (store.phase === 'COME_OUT') return { label: 'Come Out', color: 'bg-blue-600' }
@@ -43,22 +73,6 @@ const phaseBadge = computed(() => {
 const canPlacePass = computed(() => store.phase === 'COME_OUT')
 const canPlaceCome = computed(() => store.phase === 'POINT_PHASE')
 const canPlacePlace = computed(() => ['COME_OUT', 'POINT_PHASE'].includes(store.phase))
-
-const canPlacePassOdds = computed(() => {
-  if (store.phase !== 'POINT_PHASE' || !store.point) return false
-  const hasPass = store.activeBets.some(b => b.owner === 'hero' && b.type === 'pass' && b.status !== 'resolved')
-  const hasOdds = store.activeBets.some(b => b.owner === 'hero' && b.type === 'passOdds' && b.status !== 'resolved')
-  return hasPass && !hasOdds
-})
-
-const canPlaceDontPassOdds = computed(() => {
-  if (store.phase !== 'POINT_PHASE' || !store.point) return false
-  const hasDont = store.activeBets.some(b => b.owner === 'hero' && b.type === 'dontPass' && b.status !== 'resolved')
-  const hasOdds = store.activeBets.some(b => b.owner === 'hero' && b.type === 'dontPassOdds' && b.status !== 'resolved')
-  return hasDont && !hasOdds
-})
-
-const showOddsButton = computed(() => canPlacePassOdds.value || canPlaceDontPassOdds.value)
 
 const rollLabel = computed(() => props.heroIsShooting ? 'Shoot' : 'Roll')
 
@@ -141,15 +155,37 @@ const rollTooltip = computed(() => {
         @click="quickBet('place8')"
       />
       <UButton
-        v-if="showOddsButton"
+        v-if="oddsOffer"
         size="xs"
         variant="outline"
-        :label="canPlacePassOdds ? 'Max Odds' : 'Lay Odds'"
+        :label="oddsOffer.label"
         class="cursor-pointer border-emerald-500/60 text-emerald-400 hover:bg-emerald-500/20"
-        :title="'Place max odds — 0% house edge!'"
+        :title="`Put ${formatCents(oddsOffer.amount)} in odds behind your bet — 0% house edge`"
         color="neutral"
-        @click="quickBet(canPlacePassOdds ? 'passOdds' : 'dontPassOdds')"
+        @click="placeOdds"
       />
+    </div>
+
+    <!-- What a click on a number box places -->
+    <div
+      class="flex items-center rounded-md border border-neutral-700 overflow-hidden"
+      role="group"
+      aria-label="Bet type for the number boxes"
+    >
+      <button
+        v-for="mode in numberModes"
+        :key="mode.key"
+        type="button"
+        class="px-2 py-1 text-[11px] font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-sky-400"
+        :class="props.numberBetMode === mode.key
+          ? 'bg-amber-500/20 text-amber-300'
+          : 'text-neutral-400 hover:text-neutral-200'"
+        :aria-pressed="props.numberBetMode === mode.key"
+        :title="mode.title"
+        @click="$emit('update:number-bet-mode', mode.key)"
+      >
+        {{ mode.label }}
+      </button>
     </div>
 
     <!-- Same Bet -->

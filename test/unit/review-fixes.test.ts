@@ -205,14 +205,19 @@ describe('store accounting', () => {
     expect(store.sessionStats.totalProfitLoss).toBe(0)
   })
 
-  it('P&L always equals the change in bankroll once bets resolve', () => {
-    const store = initStore()
+  it('P&L always equals the change in bankroll plus what is still on the felt', () => {
+    const store = initStore({ buyVigTiming: 'on_bet' })
     const b = bet('buy4', 2000, 4)
     store.addBet(b, 100)
     store.applyResolutions([{
       betId: b.id, betType: 'buy4', owner: 'hero', outcome: 'win', payout: 6000, netGain: 4000, description: ''
     }])
-    expect(store.sessionStats.totalProfitLoss).toBe(store.hero!.bankroll - store.hero!.startingBankroll)
+    // The Buy stays up after winning (and owes its vig again), so $20 of the
+    // hero's money is on the table rather than in the rack.
+    const onFelt = store.activeBets.reduce((sum, x) => sum + x.amount, 0)
+    expect(onFelt).toBe(2000)
+    expect(store.sessionStats.totalProfitLoss).toBe(4000 - 100 - 100)
+    expect(store.sessionStats.totalProfitLoss).toBe(store.hero!.bankroll + onFelt - store.hero!.startingBankroll)
   })
 
   it('a player with chips still on the felt is not busted', () => {

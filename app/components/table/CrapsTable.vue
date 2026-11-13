@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { ActiveBet } from '~/utils/betTypes'
-import { BET_TYPE_TO_ZONE } from '~/utils/betTypes'
+import { BET_TYPE_TO_ZONE, betTypeToNumber, isBuyBet, isLayBet } from '~/utils/betTypes'
 import { zoneDescriptions } from '~/utils/zoneDescriptions'
 
 interface Props {
@@ -72,7 +72,10 @@ const zoneTotals = computed(() => {
   const totals = new Map<string, number>()
   for (const bet of props.activeBets) {
     if (bet.status === 'resolved') continue
-    const zone = BET_TYPE_TO_ZONE[bet.type]
+    // Buy and Lay bets are made on the number box itself, so they count
+    // toward that box's announced total.
+    const number = isBuyBet(bet.type) || isLayBet(bet.type) ? betTypeToNumber(bet.type) : null
+    const zone = number === null ? BET_TYPE_TO_ZONE[bet.type] : BET_TYPE_TO_ZONE[`place${number}` as keyof typeof BET_TYPE_TO_ZONE]
     totals.set(zone, (totals.get(zone) ?? 0) + bet.amount)
   }
   return totals
@@ -1416,7 +1419,7 @@ const puckY = computed(() => {
       </g>
 
       <!-- ==================== ACTIVE BET CHIPS ==================== -->
-      <TableBetChipsLayer :zone-totals="zoneTotals" />
+      <TableBetChipsLayer :bets="activeBets" />
 
       <!-- ==================== PUCK ==================== -->
       <g
